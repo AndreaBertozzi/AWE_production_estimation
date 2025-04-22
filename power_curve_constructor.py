@@ -183,14 +183,15 @@ class PowerCurveConstructor:
         max_force_trans = np.array([kpi['max_tether_force']['trans'] for kpi in kpis])
         ax[2, 1].plot(self.wind_speeds, max_force_trans, label='max_tether_force.trans')
         if tether_force_limits:
-            ax[3, 1].axhline(tether_force_limits[0], linestyle='--', color='k')
-            ax[3, 1].axhline(tether_force_limits[1], linestyle='--', color='k')
+            ax[2, 1].axhline(tether_force_limits[0], linestyle='--', color='k')
+            ax[2, 1].axhline(tether_force_limits[1], linestyle='--', color='k')
+            ax[2, 1].annotate('Violation occurring before\nswitch to force controlled',
+                          xy=(0.05, 0.10), xycoords='axes fraction')
+
         ax[2, 1].grid()
         ax[2, 1].set_ylabel('Tether force [N]')
         ax[2, 1].legend(loc=2)
-        ax[2, 1].annotate('Violation occurring before\nswitch to force controlled',
-                          xy=(0.05, 0.10), xycoords='axes fraction')
-
+        
         # Plot reeling speed related performance indicators.
         max_speed_in = np.array([kpi['max_reeling_speed']['in'] for kpi in kpis])
         ax[3, 1].plot(self.wind_speeds, max_speed_in, label='max_reeling_speed.in')

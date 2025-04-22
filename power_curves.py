@@ -381,7 +381,9 @@ def compare_kpis(power_curves):
 
 
 if __name__ == "__main__":
-    # estimate_wind_speed_operational_limits(n_clusters=8, loc='mmc')
-    pcs = generate_power_curves(loc='mmc', n_clusters=8)
-    compare_kpis(pcs)
+    #estimate_wind_speed_operational_limits(n_clusters=8, loc='mmc')
+    #pcs = generate_power_curves(loc='mmc', n_clusters=8)
+    load_power_curve_results_and_plot_trajectories('mmc', n_clusters=8, i_profile=1)
+
+    #compare_kpis(pcs)
     plt.show()

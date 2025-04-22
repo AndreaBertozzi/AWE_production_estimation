@@ -1,4 +1,4 @@
-from pyOpt import Optimization, SLSQP, Gradient
+#from pyOpt import Optimization, SLSQP, Gradient
 from scipy import optimize as op
 import numpy as np
 import matplotlib.pyplot as plt
@@ -81,7 +81,7 @@ class Optimizer:
         self.environment_state = environment_state
 
         # Optimization configuration.
-        self.use_library = 'pyopt'  # Either 'pyopt' or 'scipy' can be opted. pyOpt is in general faster, however more
+        self.use_library = 'scipy'  # Either 'pyopt' or 'scipy' can be opted. pyOpt is in general faster, however more
         # cumbersome to install.
         self.use_parallel_processing = False  # Only compatible with pyOpt: used for determining the gradient. Script
         # should be run using: mpiexec -n 4 python script.py, when using parallel processing. Parallel processing does
@@ -232,46 +232,6 @@ class Optimizer:
             }
             self.op_res = dict(op.minimize(self.obj_fun, starting_point, args=args, bounds=bounds, method='SLSQP',
                                            options=options, callback=self.callback_fun_scipy, constraints=cons))
-        elif self.use_library == 'pyopt':
-            op_problem = Optimization('Pumping cycle power', self.eval_fun_pyopt)
-            op_problem.addObj('f')
-
-            if self.reduce_x is None:
-                x_range = range(len(self.x0))
-            else:
-                x_range = self.reduce_x
-            for i_x, xi0, b in zip(x_range, starting_point, bounds):
-                op_problem.addVar('x{}'.format(i_x), 'c', lower=b[0], upper=b[1], value=xi0)
-
-            for i_c in self.reduce_ineq_cons:
-                op_problem.addCon('g{}'.format(i_c), 'i')
-
-            if self.use_parallel_processing:
-                sens_mode = 'pgc'
-            else:
-                sens_mode = ''
-
-            # grad = Gradient(op_problem, sens_type='FD', sens_mode=sens_mode, sens_step=eps)
-            # f0, g0, _ = self.eval_fun_pyopt(starting_point)
-            # grad_fun = lambda f, g: grad.getGrad(starting_point, {}, [f], g)
-            # dff0, dgg0 = grad_fun(f0, g0)
-            # if np.any(dff0 == 0.):
-            #     print("!!! Gradient contains zero component !!!")
-
-            optimizer = SLSQP()
-            optimizer.setOption('IPRINT', iprint)  # -1 - None, 0 - Screen, 1 - File
-            optimizer.setOption('MAXIT', maxiter)
-            optimizer.setOption('ACC', ftol)
-
-            optimizer(op_problem, sens_type='FD', sens_mode=sens_mode, sens_step=eps, *args)
-            op_sol = op_problem.solution(0)
-
-            if iprint == 1:
-                nit, nfev, njev = read_slsqp_output_file(print_details)
-            else:
-                nit, nfev, njev = 0, 0, 0
-
-            self.op_res = convert_optimization_result(op_sol, nit, nfev, njev, print_details, iprint)
         else:
             raise ValueError("Invalid library provided.")
 
