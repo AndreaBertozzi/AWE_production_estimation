@@ -476,7 +476,7 @@ class OptimizerCycle(Optimizer):
         cycle_keys = list(flatten_dict(cycle_settings))
         overruled_keys = []
         for k in ['cycle.elevation_angle_traction', 'cycle.tether_length_start_retraction',
-                  'cycle.tether_length_end_retraction', 'retraction.control', 'transition.control', 'traction.control']:
+                  'cycle.tether_length_end_retraction', 'retraction.control', 'transition.control', 'traction.control', 'traction.pattern']:
             if k in cycle_keys:
                 overruled_keys.append(k)
         if overruled_keys:
@@ -522,6 +522,7 @@ class OptimizerCycle(Optimizer):
         if res["n_crosswind_patterns"] is not None:
             ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 1
         else:
+            print('Here!!!! No crosswind patterns available - line 525 cycle_optimizer')
             ineq_cons_cw_patterns = 0.  # Constraint set to 0 does not affect the optimization.
 
         ineq_cons = np.array([force_out_setpoint_min, force_in_setpoint_max, ineq_cons_traction_max_force,
@@ -535,7 +536,7 @@ class OptimizerCycle(Optimizer):
         # Map the optimization vector to the separate variables.
         tether_force_traction, tether_force_retraction, elevation_angle_traction, tether_length_diff, \
         tether_length_min = x_real_scale
-
+        
         # Configure the cycle settings and run simulation.
         self.cycle_settings['cycle']['elevation_angle_traction'] = elevation_angle_traction
         self.cycle_settings['cycle']['tether_length_start_retraction'] = tether_length_min + tether_length_diff
