@@ -5,20 +5,27 @@ import pandas as pd
 from copy import deepcopy
 
 from qsm import LogProfile, NormalisedWindTable1D, KiteKinematics, SteadyState, TractionPhaseHybrid, \
-    TractionConstantElevation, SteadyStateError, TractionPhase
+    TractionConstantElevation, SteadyStateError, TractionPhase, TractionPhasePattern
 from kitepower_kites import sys_props_v3
 from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor
 
 # Assumptions representative reel-out state at cut-in wind speed.
 theta_ro_ci = 25 * np.pi / 180.
-phi_ro = 13 * np.pi / 180.
-chi_ro = 100 * np.pi / 180.
+phi_ro = 14 * np.pi / 180.
+chi_ro = 96.4 * np.pi / 180.
+phi_rmax = np.arcsin(np.sin(phi_ro)*np.sqrt(2))
 
 l0 = 200  # Tether length at start of reel-out.
-l1_lb = 350  # Lower bound of tether length at end of reel-out.
-l1_ub = 450  # Upper bound of tether length at end of reel-out.
+l1_lb = 250  # Lower bound of tether length at end of reel-out.
+l1_ub = 350  # Upper bound of tether length at end of reel-out.
 
+################################### IMPORTANT #######################################
+# Not elegant way of subscribing settings without changing everything               #
+#sys_props_v3 = deepcopy(sys_props_v2) # - V2 is the kite used in Van der Vlugt et al., 2019   #
+r_turning = 3.5*8.3 # m Approximated formula for turning radius
+rel_el_angle = np.arcsin(r_turning/l0)
+#####################################################################################
 
 def calc_tether_force_traction(env_state, straight_tether_length):
     """"Calculate tether force for the minimum allowable reel-out speed and given wind conditions and tether length."""
@@ -35,8 +42,8 @@ def get_cut_in_wind_speed(env):
     """Iteratively determine lowest wind speed for which, along the entire reel-out path, feasible steady flight states
     with the minimum allowable reel-out speed are found."""
     dv = 1e-2  # Step size [m/s].
-    v0 = 5.6  # Lowest wind speed [m/s] with which the iteration is started.
-
+    v0 = 3.6  # Lowest wind speed [m/s] with which the iteration is started.
+    
     v = v0
     while True:
         env.set_reference_wind_speed(v)
@@ -60,7 +67,7 @@ def get_cut_in_wind_speed(env):
             pass
 
         v += dv
-
+   
 
 def calc_n_cw_patterns(env, theta=60. * np.pi / 180.):
     """Calculate the number of cross-wind manoeuvres flown."""
@@ -68,6 +75,7 @@ def calc_n_cw_patterns(env, theta=60. * np.pi / 180.):
             'control': ('tether_force_ground', sys_props_v3.tether_force_max_limit),
             'azimuth_angle': phi_ro,
             'course_angle': chi_ro,
+            'pattern': {'azimuth_angle': phi_rmax, 'rel_elevation_angle': rel_el_angle}
         })
     trac.enable_limit_violation_error = True
 
@@ -170,16 +178,20 @@ def estimate_wind_speed_operational_limits(loc='mmc', n_clusters=8):
         env = create_environment(suffix, i_profile)
 
         # Get cut-in wind speed.
+        print('Calculating cut-in wind speed...')
         vw_cut_in, _, tether_force_cut_in = get_cut_in_wind_speed(env)
         res['vw_100m_cut_in'].append(vw_cut_in)
         res['tether_force_cut_in'].append(tether_force_cut_in)
+        print('Cut-in wind speed: ' + str(vw_cut_in))
 
         # Get cut-out wind speed, which proved to work better when using 250m reference height.
+        print('Calculating cut-out wind speed...')
         env.set_reference_height(250)
         vw_cut_out250m, elev = get_cut_out_wind_speed(env)
         env.set_reference_wind_speed(vw_cut_out250m)
         vw_cut_out = env.calculate_wind(100.)
         res['vw_100m_cut_out'].append(vw_cut_out)
+        print('Cut-out wind speed: ' + str(vw_cut_out))
 
         # Plot the wind profiles corresponding to the wind speed operational limits and the profile shapes.
         env.set_reference_height(100.)
@@ -217,7 +229,7 @@ def generate_power_curves(loc='mmc', n_clusters=8):
     # Cycle simulation settings for different phases of the power curves.
     cycle_sim_settings_pc_phase1 = {
         'cycle': {
-            'traction_phase': TractionPhase,
+            'traction_phase': TractionPhasePattern,
             'include_transition_energy': False,
         },
         'retraction': {},
@@ -227,10 +239,13 @@ def generate_power_curves(loc='mmc', n_clusters=8):
         'traction': {
             'azimuth_angle': phi_ro,
             'course_angle': chi_ro,
+            'pattern': {'azimuth_angle': phi_rmax, 'rel_elevation_angle': rel_el_angle},
+            'time_step': 0.25,
+
         },
     }
     cycle_sim_settings_pc_phase2 = deepcopy(cycle_sim_settings_pc_phase1)
-    cycle_sim_settings_pc_phase2['cycle']['traction_phase'] = TractionPhaseHybrid
+    #cycle_sim_settings_pc_phase2['cycle']['traction_phase'] = TractionPhaseHybrid
 
     ax_pcs = plt.subplots(2, 1)[1]
     for a in ax_pcs: a.grid()
@@ -250,8 +265,8 @@ def generate_power_curves(loc='mmc', n_clusters=8):
         # which the optimization is performed is somewhat lower than the estimated cut-out wind speed.
         vw_cut_in = limit_estimates.iloc[i_profile-1]['vw_100m_cut_in']
         vw_cut_out = limit_estimates.iloc[i_profile-1]['vw_100m_cut_out']
-        wind_speeds = np.linspace(vw_cut_in, vw_cut_out-1, 50)
-        wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.05, 15)))
+        wind_speeds = np.linspace(vw_cut_in, vw_cut_out-1, 30)
+        wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 10)))
 
         # For the first phase of the power curve, the constraint on the number of cross-wind patterns flown is not
         # active. It is assumed that sufficient cross-wind patterns are flown up to vw_100m = 7 m/s (verify this).
@@ -262,6 +277,9 @@ def generate_power_curves(loc='mmc', n_clusters=8):
 
         op_cycle_pc_phase2 = OptimizerCycle(cycle_sim_settings_pc_phase2, sys_props_v3, env, reduce_x=np.array([0, 1, 2, 3]))
 
+        
+
+        
         # Configuration of the sequential optimizations for which is differentiated between the wind speed ranges
         # bounded above by the wind speed of the dictionary key. If dx0 does not contain only zeros, the starting point
         # of the new optimization is not the solution of the preceding optimization.
@@ -381,9 +399,9 @@ def compare_kpis(power_curves):
 
 
 if __name__ == "__main__":
-    #estimate_wind_speed_operational_limits(n_clusters=8, loc='mmc')
-    #pcs = generate_power_curves(loc='mmc', n_clusters=8)
-    load_power_curve_results_and_plot_trajectories('mmc', n_clusters=8, i_profile=1)
+    estimate_wind_speed_operational_limits(n_clusters=1, loc='mmc')
+    pcs = generate_power_curves(loc='mmc', n_clusters=1)
+    #load_power_curve_results_and_plot_trajectories('mmc', n_clusters=8, i_profile=1)
 
-    #compare_kpis(pcs)
+    compare_kpis(pcs)
     plt.show()
