@@ -429,7 +429,7 @@ class OptimizerCycle(Optimizer):
                 "Reel-in tether\nlength [m]",
                 "Minimum tether\nlength [m]"
             ]
-            self.x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.697777, 120, 150])
+            self.x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.297777, 120, 150])
             self.scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1e-3, 1e-3])
             self.bounds_real_scale_default = np.array([
                 [np.nan, np.nan],
@@ -453,7 +453,7 @@ class OptimizerCycle(Optimizer):
                 "Reel-in tether\nlength [m]",
                 "Minimum tether\nlength [m]"
             ]
-            self.x0_real_scale_default = np.array([2., -4., 0.523599, 0.174444, 0.697777, 120, 150])
+            self.x0_real_scale_default = np.array([2., -4., 0.523599, 0.174444, 0.297777, 120, 150])
             self.scaling_x_default = np.array([1e-1, 1e-1, 1, 1, 1, 1e-3, 1e-3])
             self.bounds_real_scale_default = np.array([
                 [np.nan, np.nan],
@@ -469,8 +469,8 @@ class OptimizerCycle(Optimizer):
         
         # Initiate attributes of parent class.
         bounds = self.bounds_real_scale_default.copy()
-        bounds[0, :] = [0., system_properties.reeling_speed_max_limit]
-        bounds[1, :] = [-system_properties.reeling_speed_max_limit, 0.]
+        bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
+        bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
         bounds[3, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
         bounds[4, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]
         
@@ -499,6 +499,8 @@ class OptimizerCycle(Optimizer):
             x_real_scale = x/self.scaling_x
         else:
             x_real_scale = x
+
+        print(x_real_scale)
         res = self.eval_performance_indicators(x_real_scale, **kwargs)
 
         # Prepare the simulation by updating simulation parameters.
@@ -676,8 +678,9 @@ def test():
         'traction': {'time_step': 0.25
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.arange(7), reduce_ineq_cons=np.arange(4), force_or_speed_control='force')
-    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 8*np.pi/180., 40*np.pi/180. , 150, 230])
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.array([0, 1, 2, 5]),
+                         reduce_ineq_cons=np.arange(4), force_or_speed_control='force')
+    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 6*np.pi/180., 12*np.pi/180. , 150, 230])
     print(oc.optimize())
     oc.eval_point(True)
     plt.show()

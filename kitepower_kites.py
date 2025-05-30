@@ -50,7 +50,7 @@ sys_props_v3 = {
     'tether_drag_coefficient': 1.1,  # [-]
     'rel_elevation_min_limit': 4*pi/180,
     'rel_elevation_max_limit': 10*pi/180,
-    'max_azimuth_min_limit': 20*pi/180,
-    'max_azimuth_max_limit': 45*pi/180
+    'max_azimuth_min_limit': 10*pi/180,
+    'max_azimuth_max_limit': 20*pi/180
 }
 sys_props_v3 = SystemProperties(sys_props_v3)
