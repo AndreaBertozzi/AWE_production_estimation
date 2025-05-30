@@ -81,13 +81,8 @@ class Optimizer:
         self.environment_state = environment_state
 
         # Optimization configuration.
-        self.use_library = 'scipy'  # Either 'pyopt' or 'scipy' can be opted. pyOpt is in general faster, however more
-        # cumbersome to install.
         self.force_or_speed_control = 'force' # Either 'force' or 'speed' can opted.
-        self.use_parallel_processing = False  # Only compatible with pyOpt: used for determining the gradient. Script
-        # should be run using: mpiexec -n 4 python script.py, when using parallel processing. Parallel processing does
-        # not speed up solving the problem when only a limited number of processors are available.
-
+        
         self.scaling_x = scaling_x  # Scaling the optimization variables will affect the optimization. In general, a
         # similar search range is preferred for each variable.
         self.x0_real_scale = x0_real_scale  # Optimization starting point.
@@ -214,28 +209,26 @@ class Optimizer:
 
         print_details = True
         ftol, eps = 1e-6, 1e-6
-        if self.use_library == 'scipy':
-            con = {
-                'type': 'ineq',  # g_i(x) >= 0
+    
+        con = {'type': 'ineq',  # g_i(x) >= 0
                 'fun': self.cons_fun,
             }
-            cons = []
-            for i in self.reduce_ineq_cons:
-                cons.append(con.copy())
-                cons[-1]['args'] = (i, *args)
+        cons = []
+        for i in self.reduce_ineq_cons:
+            cons.append(con.copy())
+            cons[-1]['args'] = (i, *args)
 
-            options = {
-                'disp': print_details,
-                'maxiter': maxiter,
-                'ftol': ftol,
-                'eps': eps,
-                'iprint': iprint,
+        options = {
+            'disp': print_details,
+            'maxiter': maxiter,
+            'ftol': ftol,
+            'eps': eps,
+            'iprint': iprint,
             }
-            self.op_res = dict(op.minimize(self.obj_fun, starting_point, args=args, bounds=bounds, method='SLSQP',
-                                           options=options, callback=self.callback_fun_scipy, constraints=cons))
-        else:
-            raise ValueError("Invalid library provided.")
-
+        
+        self.op_res = dict(op.minimize(self.obj_fun, starting_point, args=args, bounds=bounds, method='SLSQP',
+                            options=options, callback=self.callback_fun_scipy, constraints=cons))
+        
         if self.reduce_x is None:
             res_x = self.op_res['x']
         else:
