@@ -396,6 +396,11 @@ class SystemProperties(SysPropsFixedAeroCoeffs):
         self.tether_force_min_limit = 1200.
         self.tether_force_max_limit = 3200.
 
+        self.rel_elevation_min_limit = 4*np.pi/180,
+        self.rel_elevation_max_limit = 10*np.pi/180,
+        self.max_azimuth_min_limit = 20*np.pi/180,
+        self.max_azimuth_max_limit = 45*np.pi/180
+
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
             if hasattr(self, key):
@@ -2352,6 +2357,12 @@ class Cycle(TimeSeries):
             print("Retraction power: {:.1f}W".format(retr.average_power))
             print("Transition power: {:.1f}W".format(trans.average_power))
             print("Traction power: {:.1f}W".format(trac.average_power))
+
+        self.duty_cycle = trac.duration/self.duration
+        try:
+            self.pumping_efficiency = self.energy/trac.energy
+        except FloatingPointError:
+            self.pumping_efficiency = 0.
 
         return error_in_phase, self.average_power
 
