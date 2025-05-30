@@ -45,7 +45,7 @@ sys_props_v3 = {
     'kite_drag_coefficient_powered': .2,  # [-]
     'kite_lift_coefficient_depowered': .2,  # [-]
     'kite_drag_coefficient_depowered': .1,  # [-] - in the range of .1 - .2
-    'reeling_speed_min_limit': 2,  # [m/s] - ratio of 4 between lower and upper limit would reduce generator costs
+    'reeling_speed_min_limit': 0.1,  # [m/s] - ratio of 4 between lower and upper limit would reduce generator costs
     'reeling_speed_max_limit': 10,  # [m/s]
     'tether_drag_coefficient': 1.1,  # [-]
     'rel_elevation_min_limit': 4*pi/180,
