@@ -420,7 +420,7 @@ class OptimizerCycle(Optimizer):
 
         if self.force_or_speed_control == 'force':
             """Tether force controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
-            opt_variable_labels = [
+            self.opt_variable_labels = [
                 "Reel-out\nforce [N]",
                 "Reel-in\nforce [N]",
                 "Avg. elevation\nangle [rad]",
@@ -429,9 +429,9 @@ class OptimizerCycle(Optimizer):
                 "Reel-in tether\nlength [m]",
                 "Minimum tether\nlength [m]"
             ]
-            x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.697777, 120, 150])
-            scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1e-3, 1e-3])
-            bounds_real_scale_default = np.array([
+            self.x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.697777, 120, 150])
+            self.scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1e-3, 1e-3])
+            self.bounds_real_scale_default = np.array([
                 [np.nan, np.nan],
                 [np.nan, np.nan],         
                 [25*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
@@ -531,7 +531,7 @@ class OptimizerCycle(Optimizer):
         self.cycle_settings['transition']['control'] = ('reeling_speed', 0.)
         self.cycle_settings['traction']['control'] = ('tether_force_ground', tether_force_traction)
 
-        self.cycle_settings['transition']['pattern'] = {'azimuth_angle': max_azimuth_angle_traction, 
+        self.cycle_settings['traction']['pattern'] = {'azimuth_angle': max_azimuth_angle_traction, 
                                                         'rel_elevation_angle': rel_elevation_angle_traction}
 
         cycle = Cycle(self.cycle_settings)
@@ -607,7 +607,7 @@ def test():
         'traction': {'time_step': 0.25
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state)
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.arange(7))
     oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 8*np.pi/180., 45*np.pi/180. , 150, 230])
     print(oc.optimize())
     oc.eval_point(True)
