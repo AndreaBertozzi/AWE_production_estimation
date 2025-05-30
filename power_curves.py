@@ -11,10 +11,10 @@ from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor
 
 # Assumptions representative reel-out state at cut-in wind speed.
-theta_ro_ci = 25 * np.pi / 180.
+theta_ro_ci = 37 * np.pi / 180.
 phi_ro = 14 * np.pi / 180.
 chi_ro = 96.4 * np.pi / 180.
-phi_rmax = np.arcsin(np.sin(phi_ro)*np.sqrt(2))
+phi_rmax = 30 * np.pi / 180.
 
 l0 = 200  # Tether length at start of reel-out.
 l1_lb = 250  # Lower bound of tether length at end of reel-out.
