@@ -70,7 +70,7 @@ class Optimizer:
     """Class collecting useful functionalities for solving an optimization problem and evaluating the results using
     different settings and, thereby, enabling assessing the effect of these settings."""
     def __init__(self, x0_real_scale, bounds_real_scale, scaling_x, reduce_x, reduce_ineq_cons,
-                 system_properties, environment_state, force_or_speed_control='force'):
+                 system_properties, environment_state):
         assert isinstance(x0_real_scale, np.ndarray)
         assert isinstance(bounds_real_scale, np.ndarray)
         assert isinstance(scaling_x, np.ndarray)
@@ -662,22 +662,22 @@ def test():
     from kitepower_kites import sys_props_v3
 
     env_state = LogProfile()
-    env_state.set_reference_wind_speed(10.)
+    env_state.set_reference_wind_speed(12.)
 
     cycle_sim_settings = {
         'cycle': {
             'traction_phase': TractionPhasePattern,
             'include_transition_energy': True,
         },
-        'retraction': {'time_step': 0.5
+        'retraction': {'time_step': 0.25
                        },
-        'transition': {'time_step': 0.5,
+        'transition': {'time_step': 0.25,
         },
         'traction': {'time_step': 0.25
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.arange(7), reduce_ineq_cons=np.arange(5), force_or_speed_control='speed')
-    #oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 8*np.pi/180., 45*np.pi/180. , 150, 230])
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.arange(7), reduce_ineq_cons=np.arange(4), force_or_speed_control='force')
+    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 8*np.pi/180., 40*np.pi/180. , 150, 230])
     print(oc.optimize())
     oc.eval_point(True)
     plt.show()
