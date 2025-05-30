@@ -70,7 +70,7 @@ class Optimizer:
     """Class collecting useful functionalities for solving an optimization problem and evaluating the results using
     different settings and, thereby, enabling assessing the effect of these settings."""
     def __init__(self, x0_real_scale, bounds_real_scale, scaling_x, reduce_x, reduce_ineq_cons,
-                 system_properties, environment_state):
+                 system_properties, environment_state, force_or_speed_control='force'):
         assert isinstance(x0_real_scale, np.ndarray)
         assert isinstance(bounds_real_scale, np.ndarray)
         assert isinstance(scaling_x, np.ndarray)
@@ -81,8 +81,6 @@ class Optimizer:
         self.environment_state = environment_state
 
         # Optimization configuration.
-        self.force_or_speed_control = 'force' # Either 'force' or 'speed' can opted.
-        
         self.scaling_x = scaling_x  # Scaling the optimization variables will affect the optimization. In general, a
         # similar search range is preferred for each variable.
         self.x0_real_scale = x0_real_scale  # Optimization starting point.
@@ -103,8 +101,7 @@ class Optimizer:
         self.x_last = None  # Optimization vector used for the latest evaluation function call.
         self.obj = None  # Value of the objective/cost function of the latest evaluation function call.
         self.ineq_cons = None  # Values of the inequality constraint functions of the latest evaluation function call.
-        self.x_progress = []  # Evaluated optimization vectors of every conducted optimization iteration - only tracked
-        # when using Scipy.
+        self.x_progress = []  # Evaluated optimization vectors of every conducted optimization iteration
 
         # Optimization result.
         self.op_res = None  # Result dictionary of optimization function.
@@ -130,27 +127,6 @@ class Optimizer:
         kpis = self.eval_performance_indicators(x_real_scale, plot_result, relax_errors)
         cons = self.eval_fun(x_real_scale, False, relax_errors=relax_errors)[1]
         return cons, kpis
-
-    def eval_fun_pyopt(self, x, *args):
-        """PyOpt's implementation of SLSQP can produce NaN's in the optimization vector or contain values that violate
-        the bounds."""
-        if np.isnan(x).any():
-            raise OptimizerError("Optimization vector contains NaN's.")
-
-        if self.reduce_x is not None:
-            x_full = self.x0.copy()
-            x_full[self.reduce_x] = x
-        else:
-            x_full = x
-
-        bounds_adhered = (x_full - self.bounds_real_scale[:, 0]*self.scaling_x >= -1e6).all() and \
-                         (x_full - self.bounds_real_scale[:, 1]*self.scaling_x <= 1e6).all()
-        if not bounds_adhered:
-            raise OptimizerError("Optimization bounds violated.")
-
-        obj, ineq_cons = self.eval_fun(x_full, *args)
-
-        return obj, [-c for c in ineq_cons], 0
 
     def obj_fun(self, x, *args):
         """Scipy's implementation of SLSQP uses separate functions for the objective and constraints. Since the
@@ -367,7 +343,7 @@ class Optimizer:
             # Mark ranges where constraint is active with a background color.
             ax[i].fill_between(xi_sweep, 0, 1, where=active_g, alpha=0.4, transform=ax[i].get_xaxis_transform())
 
-            ax[i].set_xlabel(self.OPT_VARIABLE_LABELS[red_x[i]])
+            ax[i].set_xlabel(self.opt_variable_labels[red_x[i]])
             ax[i].set_ylabel("Response [-]")
             ax[i].grid()
 
@@ -390,7 +366,7 @@ class Optimizer:
         x_ref = x_real_scale[i_x]
         power_cycle_ref = self.eval_performance_indicators(x_real_scale, scale_x=False)['average_power']['cycle']
         power_out_ref = self.eval_performance_indicators(x_real_scale, scale_x=False)['average_power']['out']
-        xlabel = self.OPT_VARIABLE_LABELS[i_x]
+        xlabel = self.opt_variable_labels[i_x]
 
         # Sweep between limits and write results to
         lb, ub = self.bounds_real_scale[i_x]
@@ -437,33 +413,48 @@ class Optimizer:
 
 
 class OptimizerCycle(Optimizer):
-    """Tether force controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
-    OPT_VARIABLE_LABELS = [
-        "Reel-out\nforce [N]",
-        "Reel-in\nforce [N]",
-        "Elevation\nangle [rad]",
-        "Reel-in tether\nlength [m]",
-        "Minimum tether\nlength [m]"
-    ]
-    X0_REAL_SCALE_DEFAULT = np.array([5000, 500, 0.523599, 120, 150])
-    SCALING_X_DEFAULT = np.array([1e-4, 1e-4, 1, 1e-3, 1e-3])
-    BOUNDS_REAL_SCALE_DEFAULT = np.array([
-        [np.nan, np.nan],
-        [np.nan, np.nan],
-        [25*np.pi/180, 60.*np.pi/180.],
-        [150, 250],
-        [150, 250],
-    ])
+    def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None,
+                  reduce_ineq_cons=None, force_or_speed_control='force'): 
+              
+        self.force_or_speed_control = force_or_speed_control
 
-    def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None, reduce_ineq_cons=None):
+        if self.force_or_speed_control == 'force':
+            """Tether force controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
+            opt_variable_labels = [
+                "Reel-out\nforce [N]",
+                "Reel-in\nforce [N]",
+                "Avg. elevation\nangle [rad]",
+                "Rel. elevation\nangle [rad]",
+                "Max. azimuth\nangle [rad]",
+                "Reel-in tether\nlength [m]",
+                "Minimum tether\nlength [m]"
+            ]
+            x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.697777, 120, 150])
+            scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1e-3, 1e-3])
+            bounds_real_scale_default = np.array([
+                [np.nan, np.nan],
+                [np.nan, np.nan],         
+                [25*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
+                [np.nan, np.nan], # rel. elevation angle 
+                [np.nan, np.nan], # max. azimuth angle
+                [150, 250],
+                [150, 250],
+            ])
+
+        else:
+            raise ValueError('Check your entry for force_or_speed_control: force or speed!')
+        
         # Initiate attributes of parent class.
-        bounds = self.BOUNDS_REAL_SCALE_DEFAULT.copy()
+        bounds = self.bounds_real_scale_default.copy()
         bounds[0, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
         bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
+        bounds[3, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
+        bounds[4, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]
+        
         if reduce_ineq_cons is None:
             reduce_ineq_cons = np.arange(4)
-        super().__init__(self.X0_REAL_SCALE_DEFAULT.copy(), bounds, self.SCALING_X_DEFAULT.copy(),
-                         reduce_x, reduce_ineq_cons, system_properties, environment_state)
+        super().__init__(self.x0_real_scale_default.copy(), bounds, self.scaling_x_default.copy(),
+                        reduce_x, reduce_ineq_cons, system_properties, environment_state)
 
         # Set cycle settings after printing the settings that may be overruled by the optimization.
         cycle_settings.setdefault('cycle', {})
@@ -528,8 +519,8 @@ class OptimizerCycle(Optimizer):
         """Method running the simulation and returning the performance indicators needed to calculate the objective and
         constraint functions."""
         # Map the optimization vector to the separate variables.
-        tether_force_traction, tether_force_retraction, elevation_angle_traction, tether_length_diff, \
-        tether_length_min = x_real_scale
+        tether_force_traction, tether_force_retraction, elevation_angle_traction, rel_elevation_angle_traction,\
+            max_azimuth_angle_traction, tether_length_diff, tether_length_min = x_real_scale
         
         # Configure the cycle settings and run simulation.
         self.cycle_settings['cycle']['elevation_angle_traction'] = elevation_angle_traction
@@ -539,6 +530,9 @@ class OptimizerCycle(Optimizer):
         self.cycle_settings['retraction']['control'] = ('tether_force_ground', tether_force_retraction)
         self.cycle_settings['transition']['control'] = ('reeling_speed', 0.)
         self.cycle_settings['traction']['control'] = ('tether_force_ground', tether_force_traction)
+
+        self.cycle_settings['transition']['pattern'] = {'azimuth_angle': max_azimuth_angle_traction, 
+                                                        'rel_elevation_angle': rel_elevation_angle_traction}
 
         cycle = Cycle(self.cycle_settings)
         iterative_procedure_config = {
@@ -595,7 +589,7 @@ class OptimizerCycle(Optimizer):
 
 
 def test():
-    from qsm import LogProfile, TractionPhaseHybrid
+    from qsm import LogProfile, TractionPhasePattern
     from kitepower_kites import sys_props_v3
 
     env_state = LogProfile()
@@ -603,20 +597,18 @@ def test():
 
     cycle_sim_settings = {
         'cycle': {
-            'traction_phase': TractionPhaseHybrid,
-            'include_transition_energy': False,
+            'traction_phase': TractionPhasePattern,
+            'include_transition_energy': True,
         },
-        'retraction': {},
-        'transition': {
-            'time_step': 0.25,
+        'retraction': {'time_step': 0.25
+                       },
+        'transition': {'time_step': 0.25,
         },
-        'traction': {
-            'azimuth_angle': 13 * np.pi / 180.,
-            'course_angle': 100 * np.pi / 180.,
+        'traction': {'time_step': 0.25
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x=np.array([0, 1, 2, 3]))
-    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 150, 230])
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state)
+    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 8*np.pi/180., 45*np.pi/180. , 150, 230])
     print(oc.optimize())
     oc.eval_point(True)
     plt.show()
