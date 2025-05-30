@@ -83,6 +83,7 @@ class Optimizer:
         # Optimization configuration.
         self.use_library = 'scipy'  # Either 'pyopt' or 'scipy' can be opted. pyOpt is in general faster, however more
         # cumbersome to install.
+        self.force_or_speed_control = 'force' # Either 'force' or 'speed' can opted.
         self.use_parallel_processing = False  # Only compatible with pyOpt: used for determining the gradient. Script
         # should be run using: mpiexec -n 4 python script.py, when using parallel processing. Parallel processing does
         # not speed up solving the problem when only a limited number of processors are available.
