@@ -491,6 +491,8 @@ class OptimizerCycle(Optimizer):
             x_real_scale = x/self.scaling_x
         else:
             x_real_scale = x
+        
+        print(x_real_scale)
         res = self.eval_performance_indicators(x_real_scale, **kwargs)
 
         # Prepare the simulation by updating simulation parameters.
@@ -555,6 +557,8 @@ class OptimizerCycle(Optimizer):
 
         if plot_result:  # Plot the simulation results.
             cycle.trajectory_plot(steady_state_markers=True)
+            cycle.trajectory_plot3d()
+            
             phase_switch_points = [cycle.transition_phase.time[0], cycle.traction_phase.time[0]]
             cycle.time_plot(['straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'],
                             plot_markers=phase_switch_points)
@@ -601,7 +605,7 @@ class OptimizerCycle(Optimizer):
 
 
 def test():
-    from qsm import LogProfile, TractionPhaseHybrid
+    from qsm import LogProfile, TractionPhasePattern
     from kitepower_kites import sys_props_v3
 
     env_state = LogProfile()
@@ -609,7 +613,7 @@ def test():
 
     cycle_sim_settings = {
         'cycle': {
-            'traction_phase': TractionPhaseHybrid,
+            'traction_phase': TractionPhasePattern,
             'include_transition_energy': False,
         },
         'retraction': {},
@@ -617,8 +621,7 @@ def test():
             'time_step': 0.25,
         },
         'traction': {
-            'azimuth_angle': 13 * np.pi / 180.,
-            'course_angle': 100 * np.pi / 180.,
+            'pattern': {'azimuth_angle': 20 * np.pi / 180, 'rel_elevation_angle': 6 * np.pi / 180}
         },
     }
     oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x=np.array([0, 1, 2, 3]))
