@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy
 import pandas as pd
-from utils import zip_el, plot_traces, default_colors
+from utils import zip_el, plot_traces
 
 np.seterr(all='raise')
 
@@ -2345,6 +2345,12 @@ class Cycle(TimeSeries):
             self.energy += trans.energy
         self.duration = self.time[-1]
         self.average_power = self.energy / self.time[-1]
+
+        self.duty_cycle = trac.duration/self.duration
+        try:
+            self.pumping_efficiency = self.energy/trac.energy
+        except FloatingPointError:
+            self.pumping_efficiency = 0.
 
         if print_summary:
             print("Total cycle: {:.1f} seconds in which {:.0f}J energy produced.".format(self.time[-1], self.energy))
