@@ -414,7 +414,7 @@ class Optimizer:
 
 class OptimizerCycle(Optimizer):
     def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None,
-                  reduce_ineq_cons=None, force_or_speed_control='force'): 
+                  reduce_ineq_cons=None, force_or_speed_control = 'force'): 
               
         self.force_or_speed_control = force_or_speed_control
 
@@ -441,6 +441,11 @@ class OptimizerCycle(Optimizer):
                 [150, 250],
             ])
 
+            # Initiate attributes of parent class.
+            bounds = self.bounds_real_scale_default.copy()
+            bounds[0, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
+            bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
+
         elif self.force_or_speed_control == 'speed':
             """Tether speed controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
             self.opt_variable_labels = [
@@ -464,13 +469,15 @@ class OptimizerCycle(Optimizer):
                 [150, 250],
                 [150, 250],
             ])
+
+            # Initiate attributes of parent class.
+            bounds = self.bounds_real_scale_default.copy()
+            bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
+            bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
+        
         else:
             raise ValueError('Check your entry for force_or_speed_control: force or speed!')
         
-        # Initiate attributes of parent class.
-        bounds = self.bounds_real_scale_default.copy()
-        bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
-        bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
         bounds[3, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
         bounds[4, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]
         
@@ -671,15 +678,15 @@ def test():
             'traction_phase': TractionPhasePattern,
             'include_transition_energy': True,
         },
-        'retraction': {'time_step': 0.25
+        'retraction': {'time_step': 0.5
                        },
-        'transition': {'time_step': 0.25,
+        'transition': {'time_step': 0.5,
         },
-        'traction': {'time_step': 0.25
+        'traction': {'time_step': 0.5
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.array([0, 1, 2, 5]),
-                         reduce_ineq_cons=np.arange(4), force_or_speed_control='force')
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.array([0, 1, 2, 4, 5]),
+                         reduce_ineq_cons=np.arange(4), force_or_speed_control='speed')
     oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 6*np.pi/180., 12*np.pi/180. , 150, 230])
     print(oc.optimize())
     oc.eval_point(True)
