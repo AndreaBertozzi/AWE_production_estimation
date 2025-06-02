@@ -419,22 +419,24 @@ class OptimizerCycle(Optimizer):
         self.force_or_speed_control = force_or_speed_control
 
         if self.force_or_speed_control == 'force':
-            """Tether force controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
+            """Tether force controlled cycle optimizer."""
             self.opt_variable_labels = [
                 "Reel-out\nforce [N]",
                 "Reel-in\nforce [N]",
+                "Reel-out transition\nspeed [m/s]"
                 "Avg. elevation\nangle [rad]",
                 "Rel. elevation\nangle [rad]",
                 "Max. azimuth\nangle [rad]",
                 "Reel-in tether\nlength [m]",
                 "Minimum tether\nlength [m]"
             ]
-            self.x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.297777, 120, 150])
-            self.scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1e-3, 1e-3])
+            self.x0_real_scale_default = np.array([5000, 500, -0.5, 0.523599, 0.174444, 0.297777, 120, 150])
+            self.scaling_x_default = np.array([1e-4, 1e-4, 1, 1, 1, 1, 1e-3, 1e-3])
             self.bounds_real_scale_default = np.array([
                 [np.nan, np.nan],
-                [np.nan, np.nan],         
-                [25*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
+                [np.nan, np.nan],
+                [-2, 0.],         
+                [30*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
                 [np.nan, np.nan], # rel. elevation angle 
                 [np.nan, np.nan], # max. azimuth angle
                 [150, 250],
@@ -445,25 +447,28 @@ class OptimizerCycle(Optimizer):
             bounds = self.bounds_real_scale_default.copy()
             bounds[0, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
             bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
+            bounds[2, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
+        
 
         elif self.force_or_speed_control == 'speed':
             """Tether speed controlled cycle optimizer. Zero reeling speed is used as setpoint for transition phase."""
             self.opt_variable_labels = [
                 "Reel-out traction\nspeed [m/s]",
                 "Reel-out retraction\nspeed [m/s]",
-                "Reel-in\nforce [N]",
+                "Reel-out transition\nspeed [m/s]",
                 "Avg. elevation\nangle [rad]",
                 "Rel. elevation\nangle [rad]",
                 "Max. azimuth\nangle [rad]",
                 "Reel-in tether\nlength [m]",
                 "Minimum tether\nlength [m]"
             ]
-            self.x0_real_scale_default = np.array([2., -4., 0.523599, 0.174444, 0.297777, 120, 150])
-            self.scaling_x_default = np.array([1e-1, 1e-1, 1, 1, 1, 1e-3, 1e-3])
+            self.x0_real_scale_default = np.array([2., -4., -0.5, 0.523599, 0.174444, 0.297777, 120, 150])
+            self.scaling_x_default = np.array([1e-1, 1e-1, 1, 1, 1, 1, 1e-3, 1e-3])
             self.bounds_real_scale_default = np.array([
                 [np.nan, np.nan],
-                [np.nan, np.nan],         
-                [25*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
+                [np.nan, np.nan], 
+                [-2, 0.],         
+                [30*np.pi/180, 60.*np.pi/180.], # avg. elevation angle
                 [np.nan, np.nan], # rel. elevation angle 
                 [np.nan, np.nan], # max. azimuth angle
                 [150, 250],
@@ -474,15 +479,18 @@ class OptimizerCycle(Optimizer):
             bounds = self.bounds_real_scale_default.copy()
             bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
             bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
+            bounds[2, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
         
         else:
             raise ValueError('Check your entry for force_or_speed_control: force or speed!')
+
+        bounds[4, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
+        bounds[5, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]
         
-        bounds[3, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
-        bounds[4, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]
-        
-        if reduce_ineq_cons is None:
-            reduce_ineq_cons = np.arange(4)
+        if reduce_ineq_cons is None: # Default settings for speed optimisation
+            if self.force_or_speed_control == "force": reduce_ineq_cons = np.arange(4)
+            elif self.force_or_speed_control == "speed": reduce_ineq_cons = np.arange(4)
+
         super().__init__(self.x0_real_scale_default.copy(), bounds, self.scaling_x_default.copy(),
                         reduce_x, reduce_ineq_cons, system_properties, environment_state)
 
@@ -538,48 +546,41 @@ class OptimizerCycle(Optimizer):
             # Constraint on the number of cross-wind patterns. It is assumed that a realistic reel-out trajectory should
             # include at least one crosswind pattern.
             if res["n_crosswind_patterns"] is not None:
-                ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 1
+                ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 0.5
             else:
                 ineq_cons_cw_patterns = 0.  # Constraint set to 0 does not affect the optimization.
 
             ineq_cons = np.array([force_out_setpoint_min, force_in_setpoint_max, ineq_cons_traction_max_force,
                                 ineq_cons_cw_patterns])
-            
+                        
         elif self.force_or_speed_control == 'speed':
             # When force limits are active during the optimization (see determine_new_steady_state method of Phase
             # class in qsm.py), the setpoint reel-out/reel-in speeds are overruled. For special cases, the respective
             # optimization variables won't affect the simulation. The lower constraints avoid random steps between
             # iterations and drives the variables towards an extremum value of the force during the respective phase.
-            if res['min_tether_force']['out'] == np.inf:
-                res['min_tether_force']['out'] = 0.
-            speed_out_setpoint_max = (res['max_reeling_speed']['out'] - x_real_scale[0])*1e-2 + 1e-6
+            if res['max_reeling_speed']['out'] == np.inf:
+                res['max_reeling_speed']['out'] = 0.
+                
+            speed_out_setpoint_max = -(res['max_reeling_speed']['out'] - x_real_scale[0])*1e-2 - 1e-6
             speed_in_setpoint_min = (res['min_reeling_speed']['in'] - x_real_scale[1])*1e-2 + 1e-6
 
-            # The maximum reel-out tether force can be exceeded when the tether force control is overruled by the maximum
-            # reel-out speed limit and the imposed reel-out speed yields a tether force exceeding its set point. This
+            # The maximum reel-out speed can be exceeded when the tether force control is overruled by the maximum
+            # reel-out speed limit and the imposed reel-out force yields a reel-out speed exceeding its set point. This
             # scenario is prevented by the lower constraint.
-            force_max_limit = self.system_properties.tether_force_max_limit
-            max_force_violation_traction = res['max_tether_force']['out'] - force_max_limit*0.9
-            ineq_cons_traction_max_force = -max_force_violation_traction/force_max_limit + 1e-6
-
-            
-            tether_force_in = res['min_tether_force']['in']    # During reel-in
-
-            min_force_limit = self.system_properties.tether_force_min_limit
-
-
-            # Constraint: prevent dropping below min tether force during reel-in
-            min_force_violation_in = min_force_limit - tether_force_in
-            ineq_cons_min_force_in = -min_force_violation_in / min_force_limit + 1e-6
+            speed_max_limit = self.system_properties.reeling_speed_max_limit
+            max_speed_violation_traction = res['max_reeling_speed']['out'] - speed_max_limit
+            ineq_cons_traction_max_speed = -max_speed_violation_traction/(speed_max_limit)
 
             # Constraint on the number of cross-wind patterns. It is assumed that a realistic reel-out trajectory should
             # include at least one crosswind pattern.
             if res["n_crosswind_patterns"] is not None:
-                ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 1
+                ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 0.5 
             else:
                 ineq_cons_cw_patterns = 0.  # Constraint set to 0 does not affect the optimization.
-            ineq_cons = np.array([speed_out_setpoint_max, speed_in_setpoint_min, ineq_cons_traction_max_force, ineq_cons_min_force_in, ineq_cons_cw_patterns])
-
+            
+            ineq_cons = np.array([speed_out_setpoint_max, speed_in_setpoint_min, ineq_cons_traction_max_speed, ineq_cons_cw_patterns])
+        
+        print(ineq_cons)
         return obj, ineq_cons
 
     def eval_performance_indicators(self, x_real_scale, plot_result=False, relax_errors=True):
@@ -587,20 +588,20 @@ class OptimizerCycle(Optimizer):
         constraint functions."""
         if self.force_or_speed_control == 'force':
             # Map the optimization vector to the separate variables.
-            tether_force_traction, tether_force_retraction, elevation_angle_traction, rel_elevation_angle_traction,\
+            tether_force_traction, tether_force_retraction, reel_out_speed_transition, elevation_angle_traction, rel_elevation_angle_traction,\
                 max_azimuth_angle_traction, tether_length_diff, tether_length_min = x_real_scale
             
             self.cycle_settings['retraction']['control'] = ('tether_force_ground', tether_force_retraction)
-            self.cycle_settings['transition']['control'] = ('reeling_speed', 0.)
+            self.cycle_settings['transition']['control'] = ('reeling_speed', reel_out_speed_transition)
             self.cycle_settings['traction']['control'] = ('tether_force_ground', tether_force_traction)
 
         elif self.force_or_speed_control == 'speed':
             # Map the optimization vector to the separate variables.
-            reel_out_speed_traction, reel_out_speed_retraction, elevation_angle_traction, rel_elevation_angle_traction,\
-                max_azimuth_angle_traction, tether_length_diff, tether_length_min = x_real_scale
+            reel_out_speed_traction, reel_out_speed_retraction, reel_out_speed_transition,  elevation_angle_traction,\
+                  rel_elevation_angle_traction, max_azimuth_angle_traction, tether_length_diff, tether_length_min = x_real_scale
             
             self.cycle_settings['retraction']['control'] = ('reeling_speed', reel_out_speed_retraction)
-            self.cycle_settings['transition']['control'] = ('reeling_speed', 0.)
+            self.cycle_settings['transition']['control'] = ('reeling_speed', reel_out_speed_transition)
             self.cycle_settings['traction']['control'] = ('reeling_speed', reel_out_speed_traction)
         
 
@@ -668,10 +669,10 @@ class OptimizerCycle(Optimizer):
 
 def test():
     from qsm import LogProfile, TractionPhasePattern
-    from kitepower_kites import sys_props_v3
+    from kitepower_kites import sys_props_v9
 
     env_state = LogProfile()
-    env_state.set_reference_wind_speed(12.)
+    env_state.set_reference_wind_speed(7.)
 
     cycle_sim_settings = {
         'cycle': {
@@ -685,9 +686,9 @@ def test():
         'traction': {'time_step': 0.5
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v3, env_state, reduce_x = np.array([0, 1, 2, 4, 5]),
-                         reduce_ineq_cons=np.arange(4), force_or_speed_control='speed')
-    oc.x0_real_scale = np.array([4500, 1000, 30*np.pi/180., 6*np.pi/180., 12*np.pi/180. , 150, 230])
+    oc = OptimizerCycle(cycle_sim_settings, sys_props_v9, env_state, reduce_x = np.array([0, 1, 2, 3, 5, 6, 7]),
+                         reduce_ineq_cons=None, force_or_speed_control='speed')
+    #oc.x0_real_scale = np.array([2., -4., 0., 30*np.pi/180., 8*np.pi/180., 20*np.pi/180. , 100, 150])
     print(oc.optimize())
     oc.eval_point(True)
     plt.show()
