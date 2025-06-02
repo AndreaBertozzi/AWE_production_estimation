@@ -609,6 +609,7 @@ class OptimizerCycle(Optimizer):
         self.cycle_settings['cycle']['elevation_angle_traction'] = elevation_angle_traction
         self.cycle_settings['cycle']['tether_length_start_retraction'] = tether_length_min + tether_length_diff
         self.cycle_settings['cycle']['tether_length_end_retraction'] = tether_length_min
+        self.cycle_settings['cycle']['tether_length_start_traction'] = tether_length_min
 
         self.cycle_settings['traction']['pattern'] = {'azimuth_angle': max_azimuth_angle_traction, 
                                                         'rel_elevation_angle': rel_elevation_angle_traction}
