@@ -515,7 +515,6 @@ class OptimizerCycle(Optimizer):
         else:
             x_real_scale = x
 
-        print(x_real_scale)
         res = self.eval_performance_indicators(x_real_scale, **kwargs)
 
         # Prepare the simulation by updating simulation parameters.
@@ -580,7 +579,6 @@ class OptimizerCycle(Optimizer):
             
             ineq_cons = np.array([speed_out_setpoint_max, speed_in_setpoint_min, ineq_cons_traction_max_speed, ineq_cons_cw_patterns])
         
-        print(ineq_cons)
         return obj, ineq_cons
 
     def eval_performance_indicators(self, x_real_scale, plot_result=False, relax_errors=True):
