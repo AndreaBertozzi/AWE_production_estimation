@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
+import os
 import pickle
 
-from qsm import SteadyStateError, OperationalLimitViolation, PhaseError
+from qsm import *
 from utils import flatten_dict
 
 
@@ -282,3 +284,188 @@ class PowerCurveConstructor:
             import_dict = pickle.load(f)
         for k, v in import_dict.items():
             setattr(self, k, v)
+
+
+class WindSpeedLimitsEstimator:
+    def __init__(self, sys_props, l_min, l_max):
+        self.sys_props = sys_props
+        self.l_min = l_min
+        self.l_max = l_max 
+        self.max_azimuth_RO_cutin = 35*np.pi/180
+        self.avg_elevation_RO_cutin = 30*np.pi/180
+
+        self.rel_elevation_RO_cutout = 6*np.pi/180
+        self.max_azimuth_RO_cutout = 45*np.pi/180
+        
+
+    def calc_tether_force_traction(self, env_state, straight_tether_length, azimuth, elevation, course = np.pi/2):
+        """"Calculate tether force for the minimum allowable reel-out speed and given wind conditions and tether length."""
+        kinematics = KiteKinematics(straight_tether_length, azimuth, elevation, course)
+        env_state.calculate(kinematics.z)
+        self.sys_props.update(kinematics.straight_tether_length, True)
+
+        ss = SteadyState({'enable_steady_state_errors': True})
+        ss.control_settings = ('reeling_speed', self.sys_props.reeling_speed_min_limit)
+        ss.find_state(self.sys_props, env_state, kinematics)
+
+        return ss.tether_force_ground
+
+    def get_cut_in_wind_speed(self, env = LogProfile()):
+        """Iteratively determine lowest wind speed for which, along the entire reel-out path, feasible steady flight states
+        with the minimum allowable reel-out speed are found."""
+        dv = 1e-2  # Step size [m/s].
+        v0 = 3.6  # Lowest wind speed [m/s] with which the iteration is started.
+        
+        v = v0
+        while True:
+            env.set_reference_wind_speed(v)
+            try:
+                # Setting tether force as setpoint in qsm yields infeasible region
+                tether_force_start = self.calc_tether_force_traction(env, self.l_min, self.max_azimuth_RO_cutin, self.avg_elevation_RO_cutin)
+                tether_force_end = self.calc_tether_force_traction(env, self.l_max, self.max_azimuth_RO_cutin, self.avg_elevation_RO_cutin)
+
+                start_critical = tether_force_end > tether_force_start
+                if start_critical:
+                    critical_force = tether_force_start
+                else:
+                    critical_force = tether_force_end
+
+                if tether_force_start > self.sys_props.tether_force_min_limit and \
+                        tether_force_end > self.sys_props.tether_force_min_limit:
+                    if v == v0:
+                        raise ValueError("Starting speed is too high.")
+                    return v, start_critical, critical_force
+            except SteadyStateError:
+                pass
+
+            v += dv
+   
+
+    def calc_n_cw_patterns(self, env, traction_force, avg_elevation, rel_elevation, max_azimuth, l_min, l_max):
+        """Calculate the number of cross-wind manoeuvres flown."""
+        trac = TractionPhasePattern({
+                'control': ('tether_force_ground', traction_force),
+                'pattern': {'azimuth_angle': max_azimuth, 'rel_elevation_angle': rel_elevation}
+            })
+        trac.enable_limit_violation_error = True
+        # Start and stop conditions of traction phase. Note that the traction phase uses an azimuth angle in contrast to
+        # the other phases, which results in jumps of the kite position.
+        trac.tether_length_start = l_min
+        trac.elevation_angle = TractionConstantElevation(avg_elevation)
+        trac.tether_length_end = l_max
+        trac.finalize_start_and_end_kite_obj()
+        trac.run_simulation(self.sys_props, env, {'enable_steady_state_errors': True})
+        return trac.n_crosswind_patterns
+
+
+    def get_max_wind_speed_at_elevation(self, env=LogProfile(), avg_elevation = 60*np.pi/180):
+        """Iteratively determine maximum wind speed allowing at least one cross-wind manoeuvre during the reel-out phase for
+        provided elevation angle."""
+        dv = 1e-1  # Step size [m/s].
+        v0 = 18.  # Lowest wind speed [m/s] with which the iteration is started.
+
+        # Check if the starting wind speed gives a feasible solution.
+        env.set_reference_wind_speed(v0)
+        try:
+            n_cw_patterns = self.calc_n_cw_patterns(env, self.sys_props.tether_force_max_limit, avg_elevation,
+                                                     self.rel_elevation_RO_cutout,
+                                                     self.max_azimuth_RO_cutout, self.l_min, self.l_max)
+        except SteadyStateError as e:
+            if e.code != 8:
+                raise ValueError("No feasible solution found for first assessed cut out wind speed.")
+
+        # Increase wind speed until number of cross-wind manoeuvres subceeds one.
+        v = v0 + dv
+        while True:
+            env.set_reference_wind_speed(v)
+            try:
+                n_cw_patterns = self.calc_n_cw_patterns(env, self.sys_props.tether_force_max_limit, avg_elevation, self.rel_elevation_RO_cutout,
+                                                     self.max_azimuth_RO_cutout, self.l_min, self.l_max)
+                if n_cw_patterns < 1.:
+                    return v
+            except SteadyStateError as e:
+                if e.code != 8:  # Speed is too low to yield a solution when e.code == 8.
+                    raise
+                    # return None
+
+            if v > 30.:
+                raise ValueError("Iteration did not find feasible cut-out speed.")
+            v += dv
+
+
+    def get_cut_out_wind_speed(self, env=LogProfile()):
+        """In general, the elevation angle is increased with wind speed as a last means of de-powering the kite. In that
+        case, the wind speed at which the elevation angle reaches its upper limit is the cut-out wind speed. This
+        procedure verifies if this is indeed the case. Iteratively the elevation angle is determined giving the highest
+        wind speed allowing at least one cross-wind manoeuvre during the reel-out phase."""
+        beta = 60*np.pi/180.
+        dbeta = 1*np.pi/180.
+        vw_last = 0.
+        while True:
+            vw = self.get_max_wind_speed_at_elevation(env, beta)
+            if vw is not None:
+                if vw <= vw_last:
+                    return vw_last, np.rad2deg(beta+dbeta)
+                vw_last = vw
+            beta -= dbeta
+
+    def create_environment(self, suffix, i_profile):
+        """Flatten wind profile shapes resulting from the clustering and use to create the environment object."""
+        df = pd.read_csv('wind_resource/'+'profile{}{}.csv'.format(suffix, i_profile), sep=";")
+        env = NormalisedWindTable1D()
+        env.heights = list(df['h [m]'])
+        env.normalised_wind_speeds = list((df['u1 [-]']**2 + df['v1 [-]']**2)**.5)
+        return env
+
+    def estimate_wind_speed_operational_limits(self, loc='mmc', n_clusters=8):
+        """Estimate the cut-in and cut-out wind speeds for each wind profile shape. These wind speeds are refined when
+        determining the power curves."""
+        suffix = '_{}{}'.format(n_clusters, loc)
+
+        fig, ax = plt.subplots(1, 2, figsize=(5.5, 3), sharey=True)
+        plt.subplots_adjust(top=0.92, bottom=0.164, left=0.11, right=0.788, wspace=0.13)
+
+        res = {'vw_100m_cut_in': [], 'vw_100m_cut_out': [], 'tether_force_cut_in': []}
+        for i_profile in range(1, n_clusters+1):
+            env = self.create_environment(suffix, i_profile)
+
+            # Get cut-in wind speed.
+            print('Calculating cut-in wind speed...')
+            vw_cut_in, _, tether_force_cut_in = self.get_cut_in_wind_speed(env)
+            res['vw_100m_cut_in'].append(vw_cut_in)
+            res['tether_force_cut_in'].append(tether_force_cut_in)
+            print('Cut-in wind speed: ' + str(vw_cut_in))
+
+            # Get cut-out wind speed, which proved to work better when using 250m reference height.
+            print('Calculating cut-out wind speed...')
+            env.set_reference_height(250)
+            vw_cut_out250m, elev = self.get_cut_out_wind_speed(env)
+            env.set_reference_wind_speed(vw_cut_out250m)
+            vw_cut_out = env.calculate_wind(100.)
+            res['vw_100m_cut_out'].append(vw_cut_out)
+            print('Cut-out wind speed: ' + str(vw_cut_out))
+
+            # Plot the wind profiles corresponding to the wind speed operational limits and the profile shapes.
+            env.set_reference_height(100.)
+            env.set_reference_wind_speed(vw_cut_in)
+            plt.sca(ax[0])
+            env.plot_wind_profile()
+
+            env.set_reference_wind_speed(vw_cut_out)
+            plt.sca(ax[1])
+            env.plot_wind_profile("{}-{}".format(loc.upper(), i_profile))
+            plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+            plt.ylabel('')
+            df = pd.DataFrame(res)
+
+        if not os.path.exists('output/wind_limits_estimate{}.csv'.format(suffix)):
+            df.to_csv('output/wind_limits_estimate{}.csv'.format(suffix))
+        else:
+            print("Skipping exporting operational limits...")
+
+        ax[0].set_title("Cut-in")
+        ax[0].set_xlim([0, None])
+        ax[0].set_ylim([0, 400])
+        ax[1].set_title("Cut-out")
+        ax[1].set_xlim([0, None])
+        ax[1].set_ylim([0, 400])

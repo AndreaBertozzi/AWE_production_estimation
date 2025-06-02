@@ -395,6 +395,10 @@ class SystemProperties(SysPropsFixedAeroCoeffs):
         self.reeling_speed_max_limit = 8.
         self.tether_force_min_limit = 1200.
         self.tether_force_max_limit = 3200.
+        self.rel_elevation_min_limit = 4*np.pi/180,
+        self.rel_elevation_max_limit = 10*np.pi/180,
+        self.max_azimuth_min_limit = 10*np.pi/180,
+        self.max_azimuth_max_limit =  20*np.pi/180
 
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
