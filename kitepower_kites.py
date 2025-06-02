@@ -30,7 +30,7 @@ def init_sys_props(hardware_database_filename):
         'tether_density': (tether_data["tether_density"]["value"]/
                     (pi/4*tether_data["tether_diameter"]["value"]**2)),  # [kg/m^3] - 0.85 GPa
         'tether_diameter': tether_data["tether_diameter"]["value"],  # [m]
-        'tether_force_max_limit': 50000,  # ~ max_wing_loading*projected_area [N] 
+        'tether_force_max_limit': 15000,  # ~ max_wing_loading*projected_area [N] 
         'tether_force_min_limit': 1000,  # ~ min_wing_loading * projected_area [N]
         'kite_lift_coefficient_powered': None,  # [-] - in the range of .9 - 1.0
         'kite_drag_coefficient_powered': None,  # [-]
@@ -112,5 +112,5 @@ sys_props_v9.kite_drag_coefficient_depowered =  0.08 # [-]
 
 sys_props_v9.rel_elevation_min_limit = 4*pi/180
 sys_props_v9.rel_elevation_max_limit = 8*pi/180
-sys_props_v9.max_azimuth_min_limit = 10*pi/180
-sys_props_v9.max_azimuth_max_limit = 30*pi/180
+sys_props_v9.max_azimuth_min_limit = 20*pi/180
+sys_props_v9.max_azimuth_max_limit = 40*pi/180
