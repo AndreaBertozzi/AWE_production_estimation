@@ -447,7 +447,7 @@ class OptimizerCycle(Optimizer):
             bounds = self.bounds_real_scale_default.copy()
             bounds[0, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
             bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
-            bounds[2, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
+            bounds[2, :] = [-system_properties.reeling_speed_max_limit, 0.0]
         
 
         elif self.force_or_speed_control == 'speed':
@@ -479,7 +479,7 @@ class OptimizerCycle(Optimizer):
             bounds = self.bounds_real_scale_default.copy()
             bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
             bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
-            bounds[2, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
+            bounds[2, :] = [-system_properties.reeling_speed_max_limit, 0.0]
         
         else:
             raise ValueError('Check your entry for force_or_speed_control: force or speed!')
