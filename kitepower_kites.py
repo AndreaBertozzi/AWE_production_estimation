@@ -106,7 +106,7 @@ sys_props_v9 = init_sys_props(data_path + 'hardware_database.json') # Instance o
 # Update aerodynamic coefficients
 sys_props_v9.kite_lift_coefficient_powered = 0.78  # [-]
 sys_props_v9.kite_drag_coefficient_powered = 0.14  # [-]
-sys_props_v9.kite_lift_coefficient_depowered = 0.35  # [-]
+sys_props_v9.kite_lift_coefficient_depowered = 0.33  # [-]
 sys_props_v9.kite_drag_coefficient_depowered =  0.08 # [-] 
 
 
@@ -114,3 +114,6 @@ sys_props_v9.rel_elevation_min_limit = 4*pi/180
 sys_props_v9.rel_elevation_max_limit = 8*pi/180
 sys_props_v9.max_azimuth_min_limit = 20*pi/180
 sys_props_v9.max_azimuth_max_limit = 40*pi/180
+
+import pprint
+pprint.pprint(sys_props_v9.__dict__)
