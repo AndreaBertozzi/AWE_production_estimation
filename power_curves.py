@@ -122,10 +122,12 @@ def load_power_curve_results_and_plot_trajectories(loc='mmc', n_clusters=8, i_pr
     pc = PowerCurveConstructor(None)
     suffix = '_{}{}{}'.format(n_clusters, loc, i_profile)
     pc.import_results('output/power_curve{}.pickle'.format(suffix))
-    pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 33, 48, 64])
+    pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 33, 50])
     plt.gcf().set_size_inches(5.5, 3.5)
     plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
     pc.plot_optimization_results()
+
+    return pc
 
 
 def compare_kpis(power_curves):
@@ -185,12 +187,15 @@ def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile, suffix):
     df = {
         'v_100m [m/s]': v,
         'v/v_cut-out [-]': v/v_cut_out,
-        'P [W]': p,
-        'F_out [N]': [x[0] for x in x_opts],
-        'F_in [N]': [x[1] for x in x_opts],
-        'theta_out [rad]': [x[2] for x in x_opts],
-        'dl_tether [m]': [x[3] for x in x_opts],
-        'l0_tether [m]': [x[4] for x in x_opts],
+        'P_cycle [W]': p,
+        'F_RO [N]': [x[0] for x in x_opts],
+        'F_RI [N]': [x[1] for x in x_opts],
+        'v_RIRO [m/s]': [x[2] for x in x_opts],
+        'theta_avg_RO [rad]': [x[3] for x in x_opts],        
+        'theta_rel_RO [rad]': [x[4] for x in x_opts],
+        'phi_max_RO [rad]': [x[5] for x in x_opts],
+        'stroke_tether [m]': [x[6] for x in x_opts],
+        'min_length_tether [m]': [x[7] for x in x_opts],
         'n_crosswind_patterns [-]': n_cwp,
     }
     df = pd.DataFrame(df)
@@ -198,8 +203,11 @@ def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile, suffix):
 
 if __name__ == "__main__":
     #estimate_wind_speed_operational_limits(n_clusters=1, loc='mmc')
-    pcs = generate_power_curves(loc='mmc', n_clusters=1, sys_props=sys_props_v9)
-    pcs = load_power_curve_results_and_plot_trajectories('mmc', n_clusters=1, i_profile=1)
+    #pcs = generate_power_curves(loc='mmc', n_clusters=1, sys_props=sys_props_v9)
+    pcs = []
+    for idx in range(1, 9):
+        pcs.append(load_power_curve_results_and_plot_trajectories('mmc', n_clusters=8, i_profile=idx))
+
 
     compare_kpis(pcs)
     plt.show()
