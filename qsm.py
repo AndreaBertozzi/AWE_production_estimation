@@ -1148,7 +1148,7 @@ class TimeSeries:
                     clrs = cmap_basis(np.linspace(0., .5-vals_range[1]/vals_range[0], 256))
                     cmap = ListedColormap(clrs)
                 norm = None
-                ticks = None  #[-15., 0., 45.]
+                ticks = None
             lc = Line3DCollection(segments, cmap=cmap, norm=norm)
             lc.set_array(vals)
             lc.set_linewidth(2)
@@ -1162,20 +1162,6 @@ class TimeSeries:
         ax.set_ylabel('y [m]')
         ax.set_zlabel('z [m]')
         plt.grid(True)
-
-        for coords, fun in zip((x_traj, y_traj, z_traj), (ax.set_xlim, ax.set_ylim, ax.set_zlim)):
-            coords_range = (1.1*min(coords), 1.1*max(coords))
-            if coords_range[0] > 0.:
-                fun([0., coords_range[1]])
-            elif coords_range[1] < 0.:
-                fun([coords_range[0], 0.])
-            else:
-                fun(coords_range)
-
-        # ax.set_xlim([0, 500])
-        # ax.set_ylim([-250, 250])
-        # ax.set_zlim([0, 500])
-        # ax.set_aspect('equal')  # Looks a bit silly.
 
         if animation:
             # Rotate the axes and update plot.
@@ -2416,20 +2402,6 @@ if __name__ == "__main__":
             'time_step': .05,
         },
     }
-    # pattern_settings = settings['traction']
-    # pattern_settings['tether_length'] = 100.
-    # pattern_settings['elevation_angle_ref'] = 25.*np.pi/180.
-    # cwp = EvaluatePattern(pattern_settings)
-    # cwp.calc_performance_along_pattern(sys_props, env_state, 100, print_details=True)
-    # # cwp.plot_traces((cwp.s, 'Normalised path distance [-]'), ('reeling_speed', 'power_ground', 'apparent_wind_speed', 'tether_force_ground', 'kite_tangential_speed'),
-    # #                 ('Reeling speed [m/s]', 'Power [W]', 'Apparent wind speed [m/s]', 'Tether force [N]', 'Tangential speed [m/s]'))
-    # cwp.plot_traces((cwp.s, 'Normalised path distance [-]'), ('straight_tether_length', 'elevation_angle', 'azimuth_angle', 'course_angle'),
-    #                 ('Radius [m]', 'Elevation [deg]', 'Azimuth [deg]', 'Course [deg]'),
-    #                 (None, 180./np.pi, 180./np.pi, 180./np.pi))
-    # cwp.plot_traces((cwp.time, 'Time [s]'), ('straight_tether_length', 'elevation_angle', 'azimuth_angle', 'course_angle'),
-    #                 ('Radius [m]', 'Elevation [deg]', 'Azimuth [deg]', 'Course [deg]'),
-    #                 (None, 180./np.pi, 180./np.pi, 180./np.pi))
-    # cwp.plot_pattern()
 
     cycle = Cycle(settings)
     cycle.follow_wind = True
