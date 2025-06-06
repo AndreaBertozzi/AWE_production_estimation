@@ -765,4 +765,17 @@ def test_hybrid():
     plt.show()
 
 if __name__ == "__main__":
-    test_hybrid()
+    test_force()
+    # EXAMPLE OUTPUT FROM TEST:
+    """
+    Optimization terminated successfully    (Exit mode 0)
+                Current function value: -0.7207391615666787
+                Iterations: 12
+                Function evaluations: 78
+                Gradient evaluations: 12
+    Opt. solution:  [2.28363626e+04 3.18573904e+03 5.23598776e-01 1.57079633e-01
+    5.67232007e-01 1.49998266e+02 2.48020651e+02]
+    Successful optimisation:  True
+    Constraints:  [9.99999964e-07 1.00000000e-06 1.53159082e-01 3.01644069e+00
+    2.10266713e+01 1.98108317e+00 5.57715138e-06]
+    """
