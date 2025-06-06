@@ -273,9 +273,6 @@ class PowerCurveConstructor:
 
     def export_results(self, file_name):
         export_dict = self.__dict__
-        # for k, v in export_dict.items():
-        #     if isinstance(v, np.ndarray):
-        #         export_dict[k] = v.copy().tolist()
         with open(file_name, 'wb') as f:
             pickle.dump(export_dict, f)
 
@@ -287,10 +284,10 @@ class PowerCurveConstructor:
 
 
 class WindSpeedLimitsEstimator:
-    def __init__(self, sys_props, l_min, l_max):
+    def __init__(self, sys_props):
         self.sys_props = sys_props
-        self.l_min = l_min
-        self.l_max = l_max 
+        self.l_min = 200
+        self.l_max = 350 
         self.max_azimuth_RO_cutin = 35*np.pi/180
         self.avg_elevation_RO_cutin = 30*np.pi/180
 
@@ -354,6 +351,9 @@ class WindSpeedLimitsEstimator:
         trac.elevation_angle = TractionConstantElevation(avg_elevation)
         trac.tether_length_end = l_max
         trac.finalize_start_and_end_kite_obj()
+        print(trac.kinematics_start.__dict__)
+        print(trac.position_end.__dict__)
+        
         trac.run_simulation(self.sys_props, env, {'enable_steady_state_errors': True})
         return trac.n_crosswind_patterns
 
@@ -362,14 +362,15 @@ class WindSpeedLimitsEstimator:
         """Iteratively determine maximum wind speed allowing at least one cross-wind manoeuvre during the reel-out phase for
         provided elevation angle."""
         dv = 1e-1  # Step size [m/s].
-        v0 = 18.  # Lowest wind speed [m/s] with which the iteration is started.
+        v0 = 20.  # Lowest wind speed [m/s] with which the iteration is started.
 
         # Check if the starting wind speed gives a feasible solution.
         env.set_reference_wind_speed(v0)
         try:
             n_cw_patterns = self.calc_n_cw_patterns(env, self.sys_props.tether_force_max_limit, avg_elevation,
                                                      self.rel_elevation_RO_cutout,
-                                                     self.max_azimuth_RO_cutout, self.l_min, self.l_max)
+                                                         self.max_azimuth_RO_cutout, self.l_min, self.l_max)
+            
         except SteadyStateError as e:
             if e.code != 8:
                 raise ValueError("No feasible solution found for first assessed cut out wind speed.")
@@ -417,19 +418,25 @@ class WindSpeedLimitsEstimator:
         env.normalised_wind_speeds = list((df['u1 [-]']**2 + df['v1 [-]']**2)**.5)
         return env
 
-    def estimate_wind_speed_operational_limits(self, loc='mmc', n_clusters=8):
+    def estimate_wind_speed_operational_limits(self, loc='mmc', n_clusters=8, profile_clustering = False):
         """Estimate the cut-in and cut-out wind speeds for each wind profile shape. These wind speeds are refined when
         determining the power curves."""
-        suffix = '_{}{}'.format(n_clusters, loc)
+        if profile_clustering: suffix = '_{}{}'.format(n_clusters, loc)
+        else: 
+            suffix = ''
+            n_clusters = 1
 
         fig, ax = plt.subplots(1, 2, figsize=(5.5, 3), sharey=True)
         plt.subplots_adjust(top=0.92, bottom=0.164, left=0.11, right=0.788, wspace=0.13)
 
         res = {'vw_100m_cut_in': [], 'vw_100m_cut_out': [], 'tether_force_cut_in': []}
         for i_profile in range(1, n_clusters+1):
-            env = self.create_environment(suffix, i_profile)
+            if profile_clustering: env = self.create_environment(suffix, i_profile)
+            else: env = LogProfile()
+
 
             # Get cut-in wind speed.
+            env.set_reference_height(200)
             print('Calculating cut-in wind speed...')
             vw_cut_in, _, tether_force_cut_in = self.get_cut_in_wind_speed(env)
             res['vw_100m_cut_in'].append(vw_cut_in)
@@ -438,7 +445,7 @@ class WindSpeedLimitsEstimator:
 
             # Get cut-out wind speed, which proved to work better when using 250m reference height.
             print('Calculating cut-out wind speed...')
-            env.set_reference_height(250)
+            env.set_reference_height(200)
             vw_cut_out250m, elev = self.get_cut_out_wind_speed(env)
             env.set_reference_wind_speed(vw_cut_out250m)
             vw_cut_out = env.calculate_wind(100.)
@@ -469,3 +476,9 @@ class WindSpeedLimitsEstimator:
         ax[1].set_title("Cut-out")
         ax[1].set_xlim([0, None])
         ax[1].set_ylim([0, 400])
+    
+if __name__ == "__main__": 
+    from utils import load_config
+    sys_props_v9 = SystemProperties(load_config('config.yaml'))
+    we = WindSpeedLimitsEstimator(sys_props_v9)
+    we.estimate_wind_speed_operational_limits(profile_clustering=False)
