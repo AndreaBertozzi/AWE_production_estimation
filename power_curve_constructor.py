@@ -294,8 +294,8 @@ class WindSpeedLimitsEstimator:
         self.max_azimuth_RO_cutin = 35*np.pi/180
         self.avg_elevation_RO_cutin = 30*np.pi/180
 
-        self.rel_elevation_RO_cutout = 6*np.pi/180
-        self.max_azimuth_RO_cutout = 45*np.pi/180
+        self.rel_elevation_RO_cutout = 9*np.pi/180
+        self.max_azimuth_RO_cutout = 35*np.pi/180
         
 
     def calc_tether_force_traction(self, env_state, straight_tether_length, azimuth, elevation, course = np.pi/2):
