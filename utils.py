@@ -97,6 +97,13 @@ def plot_traces(x, data_sources, source_labels, plot_parameters, y_labels=None, 
     axes[-1].set_xlim([0, None])
 
 def load_config(file_path):
+    """Function to read config.yaml file.
+    
+    Args:
+        file_path (string): The path of the .yaml configuration file.
+    """
+
+    
     with open(file_path, 'r') as f:
         config = yaml.safe_load(f)
 
