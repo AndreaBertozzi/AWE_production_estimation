@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Implementation of the model as presented in `Quasi-Steady Model of a Pumping Kite Power System`_ by R. Van der Vlugt
 et al. The model is implemented in such a way that it can be used for numerical optimization.
@@ -376,29 +375,36 @@ class SystemProperties(SysPropsFixedAeroCoeffs):
 
         """
         # Kite properties.
-        self.kite_projected_area = 16.7  # [m^2]
-        self.kite_mass = 20.  # [kg]
+        self.kite_projected_area = 16.7                         # [m^2]
+        self.kite_mass = 20.                                    # [kg]
 
         # Tether properties.
-        self.tether_density = 724.  # [kg/m^3]
-        self.tether_diameter = 0.004  # [m]
+        self.tether_density = 724.                              # [kg/m^3]
+        self.tether_diameter = 0.004                            # [m]
+        self.total_tether_length = 350                          # [m]
 
         # Aerodynamic coefficients of kite and tether.
-        self.kite_lift_coefficient_powered = .8  # [-]
-        self.kite_drag_coefficient_powered = .2  # [-]
-        self.kite_lift_coefficient_depowered = .34  # [-]
-        self.kite_drag_coefficient_depowered = .15  # [-]
-        self.tether_drag_coefficient = 1.1  # [-]
+        self.kite_lift_coefficient_powered = .8                 # [-]
+        self.kite_drag_coefficient_powered = .2                 # [-]
+        self.kite_lift_coefficient_depowered = .34              # [-]
+        self.kite_drag_coefficient_depowered = .15              # [-]
+        self.tether_drag_coefficient = 1.1                      # [-]
 
         # Relevant operational limits.
-        self.reeling_speed_min_limit = 0.
-        self.reeling_speed_max_limit = 8.
-        self.tether_force_min_limit = 1200.
-        self.tether_force_max_limit = 3200.
-        self.rel_elevation_min_limit = 4*np.pi/180,
-        self.rel_elevation_max_limit = 10*np.pi/180,
-        self.max_azimuth_min_limit = 10*np.pi/180,
-        self.max_azimuth_max_limit =  20*np.pi/180
+        self.reeling_speed_min_limit = 0.                       # [m/s]
+        self.reeling_speed_max_limit = 8.                       # [m/s]
+        self.tether_force_min_limit = 1200.                     # [N]
+        self.tether_force_max_limit = 3200.                     # [N]
+        self.avg_elevation_min_limit = 20*np.pi/180             # [rad]
+        self.avg_elevation_max_limit = 60*np.pi/180             # [rad]
+        self.rel_elevation_min_limit = 4*np.pi/180              # [rad]
+        self.rel_elevation_max_limit = 10*np.pi/180             # [rad]
+        self.max_azimuth_min_limit = 10*np.pi/180               # [rad]
+        self.max_azimuth_max_limit =  20*np.pi/180              # [rad]
+        self.tether_stroke_min_limit = 50                       # [m]
+        self.tether_stroke_max_limit = 150                      # [m] 
+        self.min_tether_length_min_limit = 80                   # [m]
+        self.min_tether_length_max_limit = 200                  # [m]        
 
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
@@ -455,32 +461,40 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
 
         """
         # Kite properties.
-        self.kite_projected_area = 16.7  # [m^2]
-        self.kite_mass = 20.  # [kg]
+        self.kite_projected_area = 16.7                         # [m^2]
+        self.kite_mass = 20.                                    # [kg]
 
         # Tether properties.
-        self.tether_density = 724.  # [kg/m^3]
-        self.tether_diameter = 0.004  # [m]
+        self.tether_density = 724.                              # [kg/m^3]
+        self.tether_diameter = 0.004                            # [m]
+        self.total_tether_length = 350                          # [m]
 
         # Difference between powered and depowered state.
-        self.pitch_powered = 5 * np.pi/180.  # [rad]
-        self.pitch_depowered = -5 * np.pi/180.  # [rad]
+        self.pitch_powered = 5 * np.pi/180.                     # [rad]
+        self.pitch_depowered = -5 * np.pi/180.                  # [rad]
 
-        # Aerodynamic coefficients of kite and tether.
-        self.angles_of_attack_lift = None
-        self.angles_of_attack_drag = None  
-        self.kite_lift_coefficients_curve = None
-        self.kite_drag_coefficients_curve = None     
-        #self.angles_of_attack_curve = np.linspace(0, 25, 26) * np.pi/180.
-        #self.kite_lift_coefficients_curve_parameters = np.array([0.1, 2.5, 10*np.pi/180., 8*np.pi/180.])*1.15
-        #self.kite_drag_coefficients_curve_parameters = np.array([0.1108, 1.3822, -1.384])/2
+        # Aerodynamic coefficients of kite and tether.    
+        self.angles_of_attack_curve = np.linspace(0, 25, 26) * np.pi/180.
+        self.kite_lift_coefficients_curve_parameters = np.array([0.1, 2.5, 10*np.pi/180., 8*np.pi/180.])*1.15
+        self.kite_drag_coefficients_curve_parameters = np.array([0.1108, 1.3822, -1.384])/2
         self.tether_drag_coefficient = 1.1  # [-]
 
         # Relevant operational limits.
-        self.reeling_speed_min_limit = 0.
-        self.reeling_speed_max_limit = 8.
-        self.tether_force_min_limit = 1200.
-        self.tether_force_max_limit = 3200.
+        self.reeling_speed_min_limit = 0.                       # [m/s]
+        self.reeling_speed_max_limit = 8.                       # [m/s]
+        self.tether_force_min_limit = 1200.                     # [N]
+        self.tether_force_max_limit = 3200.                     # [N]
+        self.avg_elevation_min_limit = 20*np.pi/180             # [rad]
+        self.avg_elevation_max_limit = 60*np.pi/180             # [rad]
+        self.rel_elevation_min_limit = 4*np.pi/180              # [rad]
+        self.rel_elevation_max_limit = 10*np.pi/180             # [rad]
+        self.max_azimuth_min_limit = 10*np.pi/180               # [rad]
+        self.max_azimuth_max_limit =  20*np.pi/180              # [rad]
+        self.tether_stroke_min_limit = 50                       # [m]
+        self.tether_stroke_max_limit = 150                      # [m] 
+        self.min_tether_length_min_limit = 80                   # [m]
+        self.min_tether_length_max_limit = 200                  # [m]
+        
 
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
@@ -527,10 +541,9 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
                 x = a - alpha_switch - d_alpha_peak
                 return np.array([1, x, x**2]).dot(coeffs_part2)
 
-        #kite_lift_coefficient = lift_curve(alpha)
-        kite_lift_coefficient = np.interp(alpha, self.angles_of_attack_lift, self.kite_lift_coefficients_curve)
-        #kite_drag_coefficient = np.array([1, alpha, alpha**2]).dot(self.kite_drag_coefficients_curve_parameters)
-        kite_drag_coefficient = np.polyval(np.polyfit(self.angles_of_attack_drag, self.kite_drag_coefficients_curve, 2), alpha)
+        kite_lift_coefficient = lift_curve(alpha)
+        kite_drag_coefficient = np.array([1, alpha, alpha**2]).dot(self.kite_drag_coefficients_curve_parameters)
+        
         c_l = kite_lift_coefficient
         c_d_tether = .25*d*le/s*self.tether_drag_coefficient
         c_d = kite_drag_coefficient + c_d_tether
