@@ -5,7 +5,6 @@ import pandas as pd
 from copy import deepcopy
 
 from qsm import *
-from kitepower_kites import sys_props_v9
 from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor, WindSpeedLimitsEstimator
 
