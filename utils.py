@@ -2,7 +2,9 @@
 """Utility functions."""
 
 import matplotlib.pyplot as plt
+import yaml
 from numpy import all, diff, array
+from math import pi
 
 
 def flatten_dict(input_dict, parent_key='', sep='.'):
@@ -93,3 +95,45 @@ def plot_traces(x, data_sources, source_labels, plot_parameters, y_labels=None, 
         # ax.legend()
     axes[-1].set_xlabel(x_label)
     axes[-1].set_xlim([0, None])
+
+def load_config(file_path):
+    with open(file_path, 'r') as f:
+        config = yaml.safe_load(f)
+
+    kite = config["kite"]
+    tether = config["tether"]
+    bounds = config["bounds"]
+
+    params_dict = {
+        # Kite
+        "kite_mass": kite["mass"],
+        "kite_projected_area": kite["projected_area"],
+        "kite_drag_coefficient_powered": kite["drag_coefficient"]["powered"],
+        "kite_drag_coefficient_depowered": kite["drag_coefficient"]["depowered"],
+        "kite_lift_coefficient_powered": kite["lift_coefficient"]["powered"],
+        "kite_lift_coefficient_depowered": kite["lift_coefficient"]["depowered"],
+
+        # Tether
+        "total_tether_length": tether["length"],
+        "tether_diameter": tether["diameter"],
+        "tether_density": tether["density"],
+        "tether_drag_coefficient": tether["drag_coefficient"],
+
+        # Bounds
+        "avg_elevation_min_limit": bounds["avg_elevation"]["min"]*pi/180,
+        "avg_elevation_max_limit": bounds["avg_elevation"]["max"]*pi/180,
+        "max_azimuth_min_limit": bounds["max_azimuth"]["min"]*pi/180,
+        "max_azimuth_max_limit": bounds["max_azimuth"]["max"]*pi/180,
+        "rel_elevation_min_limit": bounds["relative_elevation"]["min"]*pi/180,
+        "rel_elevation_max_limit": bounds["relative_elevation"]["max"]*pi/180,
+        "reeling_speed_min_limit": bounds["speed_limits"]["min"],
+        "reeling_speed_max_limit": bounds["speed_limits"]["max"],
+        "tether_force_min_limit": bounds["force_limits"]["min"]*9.806,
+        "tether_force_max_limit": bounds["force_limits"]["max"]*9.806,
+        "tether_stroke_min_limit": bounds["tether_stroke"]["min"],
+        "tether_stroke_max_limit": bounds["tether_stroke"]["max"],
+        "min_tether_length_min_limit": bounds["minimum_tether_length"]["min"],
+        "min_tether_length_max_limit": bounds["minimum_tether_length"]["max"],        
+    }
+
+    return params_dict
