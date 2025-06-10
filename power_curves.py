@@ -79,7 +79,9 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
     ax_pcs[0].plot(pc.wind_speeds, p_cycle)
     ax_pcs[1].plot(pc.wind_speeds/vw_cut_out, p_cycle)
 
-    pc.plot_optimal_trajectories()
+    pc.plot_optimal_trajectories(circle_radius=sys_props.min_tether_length_min_limit,
+                                  elevation_line=sys_props.avg_elevation_min_limit)
+    
     pc.plot_optimization_results(op_cycle_pc.opt_variable_labels, op_cycle_pc.bounds_real_scale,
                                     [sys_props.tether_force_min_limit, sys_props.tether_force_max_limit],
                                     [sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
@@ -212,7 +214,21 @@ def load_power_curve_results_and_plot_trajectories(loc='mmc', n_clusters=8, i_pr
     pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 33, 50])
     plt.gcf().set_size_inches(5.5, 3.5)
     plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
-    pc.plot_optimization_results()
+    pc.plot_optimization_results(tether_force_limits=[sys_props.tether_force_min_limit, sys_props.tether_force_max_limit],
+                                reeling_speed_limits=[sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
+
+    return pc
+
+
+def load_power_curve_logprofile_results_and_plot_trajectories(labels = None):
+    """Plot trajectories from previously generated power curve."""
+    pc = PowerCurveConstructor(None)
+    pc.import_results('output/power_curve_log_profile.pickle')
+    pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 21])
+    plt.gcf().set_size_inches(5.5, 3.5)
+    plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
+    pc.plot_optimization_results(opt_variable_labels=labels, tether_force_limits=[sys_props.tether_force_min_limit, sys_props.tether_force_max_limit],
+                                reeling_speed_limits=[sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
 
     return pc
 
@@ -289,9 +305,11 @@ def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile, suffix):
     df.to_csv('output/power_curve{}{}.csv'.format(suffix, i_profile), index=False, sep=";")
 
 if __name__ == "__main__":
+    labels = [r'$F_{T, RO}$', r'$F_{T, RI}$', r'$\theta_{avg}$', r'$\theta_{rel}$', r'$\phi_{max}$',\
+              r'$\Delta L$', r'$L_{min}$']
     x0 = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
     sys_props = SystemProperties(load_config('config.yaml'))
-    pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=20)
-    
+    #pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=20)
+    pc = load_power_curve_logprofile_results_and_plot_trajectories(labels)
     plt.show()
 
