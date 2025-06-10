@@ -137,7 +137,7 @@ class PowerCurveConstructor:
             performance_indicators = []
 
         n_opt_vars = len(xf[0])
-        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2, sharex=True)
+        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2)
         # In the left column plot each optimization variable against the wind speed.
         scl = [1e-3, 1e-3, 180/np.pi, 180/np.pi, 180/np.pi, 1, 1]
         for i in range(n_opt_vars):
