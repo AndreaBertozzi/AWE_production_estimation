@@ -13,6 +13,7 @@ class PowerCurveConstructor:
     def __init__(self, wind_speeds):
         self.wind_speeds = wind_speeds
 
+        self.optimization_settings = {'max_iter': 50, 'i_print': 0}
         self.x_opts = []
         self.x0 = []
         self.optimization_details = []
@@ -25,7 +26,8 @@ class PowerCurveConstructor:
 
         print("x0:", x0)
         power_optimizer.x0_real_scale = x0
-        x_opt = power_optimizer.optimize()
+        x_opt = power_optimizer.optimize(max_iter = self.optimization_settings['max_iter'],
+                                          i_print = self.optimization_settings['i_print'])
         self.x0.append(x0)
         self.x_opts.append(x_opt)
         self.optimization_details.append(power_optimizer.op_res)
