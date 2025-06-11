@@ -26,8 +26,8 @@ class PowerCurveConstructor:
 
         print("x0:", x0)
         power_optimizer.x0_real_scale = x0
-        x_opt = power_optimizer.optimize(max_iter = self.optimization_settings['max_iter'],
-                                          i_print = self.optimization_settings['i_print'])
+        x_opt = power_optimizer.optimize(maxiter = self.optimization_settings['max_iter'],
+                                          iprint = self.optimization_settings['i_print'])
         self.x0.append(x0)
         self.x_opts.append(x_opt)
         self.optimization_details.append(power_optimizer.op_res)
