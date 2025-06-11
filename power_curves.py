@@ -9,7 +9,7 @@ from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor, WindSpeedLimitsEstimator
 
 
-def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cut_in = 5, vw_cut_out = 20):
+def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cut_in = 5, vw_cut_out = 18):
     """Determine power curves - requires estimates of the cut-in and cut-out wind speed to be available."""
     # Cycle simulation settings for different phases of the power curves.
     cycle_sim_settings_pc = {
@@ -44,8 +44,8 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
 
     # The optimization incessantly fails for the estimated cut-out wind speed. Therefore, the highest wind speed for
     # which the optimization is performed is somewhat lower than the estimated cut-out wind speed.
-    wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 1)
-    wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 8)))
+    wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 0.5)
+    wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 2)))
 
     # Optimization variables: Force RO, Force RI, Speed RIRO, Avg. elevation [rad], Rel. elevation [rad],
     #                          Max. azimuth [rad], Reel-in tether length [m], Minimum tether length [m]
@@ -63,6 +63,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
 
     # Start optimizations.
     pc = PowerCurveConstructor(wind_speeds)
+    pc.optimization_settings = {'max_iter': 30, 'i_print': 2}
     pc.run_predefined_sequence(op_seq, x0)
     pc.export_results('output/power_curve_log_profile.pickle')
 
@@ -87,7 +88,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
                                     [sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
 
     n_cwp = [kpis['n_crosswind_patterns'] for kpis in pc.performance_indicators]
-    export_to_csv(pc.wind_speeds, vw_cut_out, p_cycle, pc.x_opts, n_cwp)
+    export_to_csv_log_profile(pc.wind_speeds, vw_cut_out, p_cycle, pc.x_opts, n_cwp)
     
     ax_pcs[1].legend()
 
@@ -145,7 +146,7 @@ def generate_power_curves(loc='mmc', n_clusters=8, sys_props = SystemProperties(
         # which the optimization is performed is somewhat lower than the estimated cut-out wind speed.
         vw_cut_in = limit_estimates.iloc[i_profile-1]['vw_100m_cut_in']
         vw_cut_out = limit_estimates.iloc[i_profile-1]['vw_100m_cut_out']
-        wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 1)
+        wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 0.5)
         wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 8)))
 
         # Optimization variables: Force RO, Force RI, Speed RIRO, Avg. elevation [rad], Rel. elevation [rad],
@@ -286,22 +287,39 @@ def compare_kpis(power_curves):
         plt.ylabel('Reel-out elevation angle [deg]')
 
 
-def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile, suffix):
+def export_to_csv_log_profile(v, v_cut_out, p, x_opts, n_cwp):
     df = {
         'v_100m [m/s]': v,
         'v/v_cut-out [-]': v/v_cut_out,
         'P_cycle [W]': p,
         'F_RO [N]': [x[0] for x in x_opts],
         'F_RI [N]': [x[1] for x in x_opts],
-        'v_RIRO [m/s]': [x[2] for x in x_opts],
-        'theta_avg_RO [rad]': [x[3] for x in x_opts],        
-        'theta_rel_RO [rad]': [x[4] for x in x_opts],
-        'phi_max_RO [rad]': [x[5] for x in x_opts],
-        'stroke_tether [m]': [x[6] for x in x_opts],
-        'min_length_tether [m]': [x[7] for x in x_opts],
+        'theta_avg_RO [rad]': [x[2] for x in x_opts],        
+        'theta_rel_RO [rad]': [x[3] for x in x_opts],
+        'phi_max_RO [rad]': [x[4] for x in x_opts],
+        'stroke_tether [m]': [x[5] for x in x_opts],
+        'min_length_tether [m]': [x[6] for x in x_opts],
         'n_crosswind_patterns [-]': n_cwp,
     }
     df = pd.DataFrame(df)
+    df.to_csv('output/power_curve_log_profile.csv', index=False, sep=";")
+
+def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile=None, suffix=None):
+    df = {
+        'v_100m [m/s]': v,
+        'v/v_cut-out [-]': v/v_cut_out,
+        'P_cycle [W]': p,
+        'F_RO [N]': [x[0] for x in x_opts],
+        'F_RI [N]': [x[1] for x in x_opts],
+        'theta_avg_RO [rad]': [x[2] for x in x_opts],        
+        'theta_rel_RO [rad]': [x[3] for x in x_opts],
+        'phi_max_RO [rad]': [x[4] for x in x_opts],
+        'stroke_tether [m]': [x[5] for x in x_opts],
+        'min_length_tether [m]': [x[6] for x in x_opts],
+        'n_crosswind_patterns [-]': n_cwp,
+    }
+    df = pd.DataFrame(df)
+    
     df.to_csv('output/power_curve{}{}.csv'.format(suffix, i_profile), index=False, sep=";")
 
 if __name__ == "__main__":
