@@ -119,7 +119,7 @@ class PowerCurveConstructor:
 
         ax.set_xlabel('x [m]')
         ax.set_ylabel('z [m]')
-        ax.set_xlim([0, None])
+        ax.set_xlim([-70, None])
         ax.set_ylim([0, None])
         ax.grid()
         ax.set_aspect('equal')
@@ -137,13 +137,13 @@ class PowerCurveConstructor:
             performance_indicators = []
 
         n_opt_vars = len(xf[0])
-        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2, sharex=True)
-
+        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2)
         # In the left column plot each optimization variable against the wind speed.
+        scl = [1e-3, 1e-3, 180/np.pi, 180/np.pi, 180/np.pi, 1, 1]
         for i in range(n_opt_vars):
             # Plot optimal and starting points.
-            ax[i, 0].plot(self.wind_speeds, [a[i] for a in xf], label='x_opt')
-            ax[i, 0].plot(self.wind_speeds, [a[i] for a in x0], 'o', markerfacecolor='None', label='x0')
+            ax[i, 0].plot(self.wind_speeds, [a[i]*scl[i] for a in xf], label='x_opt')
+            ax[i, 0].plot(self.wind_speeds, [a[i]*scl[i] for a in x0], 'o', markerfacecolor='None', label='x0')
 
             if opt_variable_labels:
                 label = opt_variable_labels[i]
@@ -152,8 +152,8 @@ class PowerCurveConstructor:
                 ax[i, 0].set_ylabel("x[{}]".format(i))
 
             if opt_variable_bounds is not None:
-                ax[i, 0].axhline(opt_variable_bounds[i, 0], linestyle='--', color='k')
-                ax[i, 0].axhline(opt_variable_bounds[i, 1], linestyle='--', color='k')
+                ax[i, 0].axhline(opt_variable_bounds[i, 0]*scl[i], linestyle='--', color='k')
+                ax[i, 0].axhline(opt_variable_bounds[i, 1]*scl[i], linestyle='--', color='k')
 
             ax[i, 0].grid()
         ax[0, 0].legend()
@@ -162,12 +162,12 @@ class PowerCurveConstructor:
         nits = np.array([od['nit'] for od in opt_details])
         ax[0, 1].plot(self.wind_speeds, nits)
         mask_opt_failed = np.array([~od['success'] for od in opt_details])
-        ax[0, 1].plot(self.wind_speeds[mask_opt_failed], nits[mask_opt_failed], 'x', label='opt failed')
+        ax[0, 1].plot(self.wind_speeds[mask_opt_failed], nits[mask_opt_failed], 'x', label='opt fail')
         mask_sim_failed = np.array([~kpi['sim_successful'] for kpi in kpis])
-        ax[0, 1].plot(self.wind_speeds[mask_sim_failed], nits[mask_sim_failed], 'x', label='sim failed')
+        ax[0, 1].plot(self.wind_speeds[mask_sim_failed], nits[mask_sim_failed], 'x', label='sim fail')
         ax[0, 1].grid()
         ax[0, 1].legend()
-        ax[0, 1].set_ylabel('Optimization iterations [-]')
+        ax[0, 1].set_ylabel('# iter [-]')
 
         # In the second panel, plot the optimal power.
         cons_treshold = -.1
@@ -175,41 +175,39 @@ class PowerCurveConstructor:
         mask_plot_power = ~mask_sim_failed & mask_cons_adhered
         power = np.array([kpi['average_power']['cycle'] for kpi in kpis])
         power[~mask_plot_power] = np.nan
-        ax[1, 1].plot(self.wind_speeds, power)
+        ax[1, 1].plot(self.wind_speeds, power/1000)
         ax[1, 1].grid()
-        ax[1, 1].set_ylabel('Mean power [W]')
+        ax[1, 1].set_ylabel(r'$P_{mech}$ [kW]')
 
         # In the third panel, plot the tether force related performance indicators.
         max_force_in = np.array([kpi['max_tether_force']['in'] for kpi in kpis])
-        ax[2, 1].plot(self.wind_speeds, max_force_in, label='max_tether_force.in')
+        ax[2, 1].plot(self.wind_speeds, max_force_in/1000, label=r'$F_{T, RI, max}$')
         max_force_out = np.array([kpi['max_tether_force']['out'] for kpi in kpis])
-        ax[2, 1].plot(self.wind_speeds, max_force_out, label='max_tether_force.out')
+        ax[2, 1].plot(self.wind_speeds, max_force_out/1000, label=r'$F_{T, RO, max}$')
         max_force_trans = np.array([kpi['max_tether_force']['trans'] for kpi in kpis])
-        ax[2, 1].plot(self.wind_speeds, max_force_trans, label='max_tether_force.trans')
+        ax[2, 1].plot(self.wind_speeds, max_force_trans/1000, label=r'$F_{T, RIRO, max}$')
         if tether_force_limits:
-            ax[2, 1].axhline(tether_force_limits[0], linestyle='--', color='k')
-            ax[2, 1].axhline(tether_force_limits[1], linestyle='--', color='k')
-            ax[2, 1].annotate('Violation occurring before\nswitch to force controlled',
-                          xy=(0.05, 0.10), xycoords='axes fraction')
+            ax[2, 1].axhline(tether_force_limits[0]/1000, linestyle='--', color='k')
+            ax[2, 1].axhline(tether_force_limits[1]/1000, linestyle='--', color='k')
 
         ax[2, 1].grid()
-        ax[2, 1].set_ylabel('Tether force [N]')
+        ax[2, 1].set_ylabel(r'$F_T$ [kN]')
         ax[2, 1].legend(loc=2)
         
         # Plot reeling speed related performance indicators.
         max_speed_in = np.array([kpi['max_reeling_speed']['in'] for kpi in kpis])
-        ax[3, 1].plot(self.wind_speeds, max_speed_in, label='max_reeling_speed.in')
+        ax[3, 1].plot(self.wind_speeds, max_speed_in, label=r'$v_{T, RI, max}$')
         max_speed_out = np.array([kpi['max_reeling_speed']['out'] for kpi in kpis])
-        ax[3, 1].plot(self.wind_speeds, max_speed_out, label='max_reeling_speed.out')
+        ax[3, 1].plot(self.wind_speeds, max_speed_out, label=r'$v_{T, RO, max}$')
         min_speed_in = np.array([kpi['min_reeling_speed']['in'] for kpi in kpis])
-        ax[3, 1].plot(self.wind_speeds, min_speed_in, label='min_reeling_speed.in')
+        ax[3, 1].plot(self.wind_speeds, min_speed_in, label=r'$v_{T, RI, mim}$')
         min_speed_out = np.array([kpi['min_reeling_speed']['out'] for kpi in kpis])
-        ax[3, 1].plot(self.wind_speeds, min_speed_out, label='min_reeling_speed.out')
+        ax[3, 1].plot(self.wind_speeds, min_speed_out, label=r'$v_{T, RO, min}$')
         if reeling_speed_limits:
             ax[3, 1].axhline(reeling_speed_limits[0], linestyle='--', color='k')
             ax[3, 1].axhline(reeling_speed_limits[1], linestyle='--', color='k')
         ax[3, 1].grid()
-        ax[3, 1].set_ylabel('Reeling speed [m/s]')
+        ax[3, 1].set_ylabel(r'$v_T$ [m/s]')
         ax[3, 1].legend(loc=2)
 
         # Plot constraint matrix.
@@ -227,21 +225,29 @@ class PowerCurveConstructor:
         color_code_matrix = np.where(cons_matrix == 0., 0, color_code_matrix)
         color_code_matrix = np.where(cons_matrix >= 1e-3, 2, color_code_matrix)
 
+        fig.delaxes(ax[5, 1])
         # Plot color code matrix.
+        ax_pos = ax[4, 1].get_position()
+        w = ax_pos.x1 - ax_pos.x0
+        h = ax_pos.y1 - ax_pos.y0
+        ax[4, 1].set_position([ax_pos.x0, ax_pos.y0-0.1, w, h])
+        ax_pos = ax[4, 1].get_position()
         cmap = mpl.colors.ListedColormap(['r', 'm', 'y', 'g', 'b'])
         bounds = [-2, -1, 0, 1, 2]
         mpl.colors.BoundaryNorm(bounds, cmap.N)
         im1 = ax[4, 1].matshow(color_code_matrix, cmap=cmap, vmin=bounds[0], vmax=bounds[-1],
                                     extent=[self.wind_speeds[0], self.wind_speeds[-1], n_cons, 0])
+        ax[4, 1].set_xticks([])
+        ax[4, 1].set_xticklabels([])
+        
         ax[4, 1].set_yticks(np.array(range(n_cons))+.5)
         ax[4, 1].set_yticklabels(range(n_cons))
-        ax[4, 1].set_ylabel('Constraint id\'s')
+        ax[4, 1].set_ylabel('Cons. ID\'s')
 
         # Add colorbar.
-        ax_pos = ax[4, 1].get_position()
         h_cbar = ax_pos.y1 - ax_pos.y0
         w_cbar = .012
-        cbar_ax = fig.add_axes([ax_pos.x1, ax_pos.y0, w_cbar, h_cbar])
+        cbar_ax = fig.add_axes([ax_pos.x1 , ax_pos.y0, w_cbar, h_cbar])
         cbar_ticks = np.arange(-2+4/10., 2., 4/5.)
         cbar_ticks_labels = ['<-.1', '<0', '0', '~0', '>0']
         cbar = fig.colorbar(im1, cax=cbar_ax, ticks=cbar_ticks)
@@ -249,15 +255,15 @@ class PowerCurveConstructor:
 
         # Plot constraint matrix with linear mapping the colors from data values between plot_cons_range.
         plot_cons_range = [-.1, .1]
-        im2 = ax[5, 1].matshow(cons_matrix, vmin=plot_cons_range[0], vmax=plot_cons_range[1], cmap=mpl.cm.YlGnBu_r,
+        im2 = ax[6, 1].matshow(cons_matrix, vmin=plot_cons_range[0], vmax=plot_cons_range[1], cmap=mpl.cm.YlGnBu_r,
                                extent=[self.wind_speeds[0], self.wind_speeds[-1], n_cons, 0])
-        ax[5, 1].set_yticks(np.array(range(n_cons))+.5)
-        ax[5, 1].set_yticklabels(range(n_cons))
-        ax[5, 1].set_ylabel('Constraint id\'s')
+        ax[6, 1].set_yticks(np.array(range(n_cons))+.5)
+        ax[6, 1].set_yticklabels(range(n_cons))
+        ax[6, 1].set_ylabel('Cons. ID\'s')
 
         # Add colorbar.
-        ax_pos = ax[5, 1].get_position()
-        cbar_ax = fig.add_axes([ax_pos.x1, ax_pos.y0, w_cbar, h_cbar])
+        ax_pos = ax[6, 1].get_position()
+        cbar_ax = fig.add_axes([ax_pos.x1 + 0.101, ax_pos.y0, w_cbar, h_cbar])
         cbar_ticks = plot_cons_range[:]
         cbar_ticks_labels = [str(v) for v in cbar_ticks]
         if plot_cons_range[0] < np.min(cons_matrix) < plot_cons_range[1]:
@@ -269,9 +275,11 @@ class PowerCurveConstructor:
         cbar = fig.colorbar(im2, cax=cbar_ax, ticks=cbar_ticks)
         cbar.ax.set_yticklabels(cbar_ticks_labels)
 
-        ax[-1, 0].set_xlabel('Wind speeds [m/s]')
-        ax[-1, 1].set_xlabel('Wind speeds [m/s]')
+        ax[-1, 0].set_xlabel('Wind speeds at 100 m [m/s]')
+        ax[3, 1].set_xlabel('Wind speeds at 100 m [m/s]')
+        
         ax[0, 0].set_xlim([self.wind_speeds[0], self.wind_speeds[-1]])
+
 
     def export_results(self, file_name):
         export_dict = self.__dict__
