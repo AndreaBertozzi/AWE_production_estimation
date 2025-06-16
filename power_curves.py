@@ -75,7 +75,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
     print("Cut-in and -out speeds changed from [{:.3f}, {:.3f}] to "
             "[{:.3f}, {:.3f}].".format(vw_cut_in, vw_cut_out, pc.wind_speeds[0], pc.wind_speeds[-1]))
 
-    # Plot power curve together with that of the other wind profile shapes.
+    
     p_cycle = [kpis['average_power']['cycle'] for kpis in pc.performance_indicators]
     ax_pcs[0].plot(pc.wind_speeds, p_cycle)
     ax_pcs[1].plot(pc.wind_speeds/vw_cut_out, p_cycle)
@@ -88,6 +88,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
                                     [sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
 
     n_cwp = [kpis['n_crosswind_patterns'] for kpis in pc.performance_indicators]
+    
     export_to_csv_log_profile(pc.wind_speeds, vw_cut_out, p_cycle, pc.x_opts, n_cwp)
     
     ax_pcs[1].legend()
@@ -325,7 +326,8 @@ def export_to_csv(v, v_cut_out, p, x_opts, n_cwp, i_profile=None, suffix=None):
 if __name__ == "__main__":
     labels = [r'$F_{T, RO}$', r'$F_{T, RI}$', r'$\theta_{avg}$', r'$\theta_{rel}$', r'$\phi_{max}$',\
               r'$\Delta L$', r'$L_{min}$']
-    x0 = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    x0_force = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    x0_speed = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
     sys_props = SystemProperties(load_config('config.yaml'))
     pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
     pc = load_power_curve_logprofile_results_and_plot_trajectories(labels)

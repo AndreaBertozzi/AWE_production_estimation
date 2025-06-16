@@ -8,12 +8,11 @@ import pickle
 from qsm import *
 from utils import flatten_dict
 
-
 class PowerCurveConstructor:
     def __init__(self, wind_speeds):
         self.wind_speeds = wind_speeds
 
-        self.optimization_settings = {'max_iter': 50, 'i_print': 0}
+        self.optimization_settings = {'max_iter': 50, 'i_print': 0, 'ftol': 1e-6, 'eps': 1e-6}
         self.x_opts = []
         self.x0 = []
         self.optimization_details = []
@@ -26,8 +25,10 @@ class PowerCurveConstructor:
 
         print("x0:", x0)
         power_optimizer.x0_real_scale = x0
-        x_opt = power_optimizer.optimize(maxiter = self.optimization_settings['max_iter'],
-                                          iprint = self.optimization_settings['i_print'])
+        x_opt = power_optimizer.optimize( max_iter = self.optimization_settings['max_iter'],
+                                          i_print  = self.optimization_settings['i_print'],
+                                          eps      = self.optimization_settings['eps'],
+                                          ftol     = self.optimization_settings['ftol'])
         self.x0.append(x0)
         self.x_opts.append(x_opt)
         self.optimization_details.append(power_optimizer.op_res)
@@ -137,7 +138,7 @@ class PowerCurveConstructor:
             performance_indicators = []
 
         n_opt_vars = len(xf[0])
-        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2)
+        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2, sharex=True)
         # In the left column plot each optimization variable against the wind speed.
         scl = [1e-3, 1e-3, 180/np.pi, 180/np.pi, 180/np.pi, 1, 1]
         for i in range(n_opt_vars):
@@ -237,8 +238,6 @@ class PowerCurveConstructor:
         mpl.colors.BoundaryNorm(bounds, cmap.N)
         im1 = ax[4, 1].matshow(color_code_matrix, cmap=cmap, vmin=bounds[0], vmax=bounds[-1],
                                     extent=[self.wind_speeds[0], self.wind_speeds[-1], n_cons, 0])
-        ax[4, 1].set_xticks([])
-        ax[4, 1].set_xticklabels([])
         
         ax[4, 1].set_yticks(np.array(range(n_cons))+.5)
         ax[4, 1].set_yticklabels(range(n_cons))
