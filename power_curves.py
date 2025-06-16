@@ -15,7 +15,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
     cycle_sim_settings_pc = {
         'cycle': {
             'traction_phase': TractionPhasePattern,
-            'include_transition_energy': False,
+            'include_transition_energy': True,
         },
         'retraction': {
             'time_step': 0.25,},
@@ -44,8 +44,8 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
 
     # The optimization incessantly fails for the estimated cut-out wind speed. Therefore, the highest wind speed for
     # which the optimization is performed is somewhat lower than the estimated cut-out wind speed.
-    wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 0.5)
-    wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 2)))
+    wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 1)
+    wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 3)))
 
     # Optimization variables: Force RO, Force RI, Speed RIRO, Avg. elevation [rad], Rel. elevation [rad],
     #                          Max. azimuth [rad], Reel-in tether length [m], Minimum tether length [m]
@@ -212,7 +212,7 @@ def load_power_curve_results_and_plot_trajectories(loc='mmc', n_clusters=8, i_pr
     pc = PowerCurveConstructor(None)
     suffix = '_{}{}{}'.format(n_clusters, loc, i_profile)
     pc.import_results('output/power_curve{}.pickle'.format(suffix))
-    pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 33, 50])
+    pc.plot_optimal_trajectories()
     plt.gcf().set_size_inches(5.5, 3.5)
     plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
     pc.plot_optimization_results(tether_force_limits=[sys_props.tether_force_min_limit, sys_props.tether_force_max_limit],
@@ -225,7 +225,7 @@ def load_power_curve_logprofile_results_and_plot_trajectories(labels = None):
     """Plot trajectories from previously generated power curve."""
     pc = PowerCurveConstructor(None)
     pc.import_results('output/power_curve_log_profile.pickle')
-    pc.plot_optimal_trajectories(wind_speed_ids=[0, 9, 18, 21])
+    pc.plot_optimal_trajectories()
     plt.gcf().set_size_inches(5.5, 3.5)
     plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
     pc.plot_optimization_results(opt_variable_labels=labels, tether_force_limits=[sys_props.tether_force_min_limit, sys_props.tether_force_max_limit],
@@ -327,7 +327,7 @@ if __name__ == "__main__":
               r'$\Delta L$', r'$L_{min}$']
     x0 = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
     sys_props = SystemProperties(load_config('config.yaml'))
-    #pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=20)
+    pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
     pc = load_power_curve_logprofile_results_and_plot_trajectories(labels)
     plt.show()
 
