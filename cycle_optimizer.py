@@ -110,7 +110,7 @@ class Optimizer:
             raise OptimizerError("Optimization vector contains nan's.")
         self.x_progress.append(x.copy())
 
-    def optimize(self, *args, maxiter=30, iprint=-1):
+    def optimize(self, *args, maxiter=30, iprint=-1, ftol = 1e-6, eps = 1e-6):
         """Perform optimization."""
         self.clear_result_attributes()
         # Construct scaled starting point and bounds
@@ -126,7 +126,7 @@ class Optimizer:
             bounds = bounds[self.reduce_x]
 
         print_details = True
-        ftol, eps = 1e-6, 1e-6
+        
     
         con = {'type': 'ineq',  # g_i(x) >= 0
                 'fun': self.cons_fun,

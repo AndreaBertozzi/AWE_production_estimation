@@ -47,7 +47,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
     wind_speeds = np.arange(vw_cut_in, vw_cut_out-1, 1)
     wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 3)))
 
-    # Optimization variables: Force RO, Force RI, Speed RIRO, Avg. elevation [rad], Rel. elevation [rad],
+    # Optimization variables: Force RO, Force RI, Avg. elevation [rad], Rel. elevation [rad],
     #                          Max. azimuth [rad], Reel-in tether length [m], Minimum tether length [m]
     op_cycle_pc = OptimizerCycle(cycle_sim_settings_pc, sys_props, env, reduce_x = np.array([0, 1, 2, 5, 6]),
                                 reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='force')
@@ -63,7 +63,7 @@ def generate_power_curves_logprofile(x0, sys_props = SystemProperties({}), vw_cu
 
     # Start optimizations.
     pc = PowerCurveConstructor(wind_speeds)
-    pc.optimization_settings = {'max_iter': 30, 'i_print': 2}
+    pc.optimization_settings = {'maxiter': 30, 'iprint': 2, 'ftol': 1e-3, 'eps': 1e-6}
     pc.run_predefined_sequence(op_seq, x0)
     pc.export_results('output/power_curve_log_profile.pickle')
 
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     x0_force = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
     x0_speed = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
     sys_props = SystemProperties(load_config('config.yaml'))
-    pc = generate_power_curves_logprofile(x0, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
+    pc = generate_power_curves_logprofile(x0_force, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
     pc = load_power_curve_logprofile_results_and_plot_trajectories(labels)
     plt.show()
 
