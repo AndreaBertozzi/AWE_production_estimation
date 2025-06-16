@@ -8,7 +8,6 @@ import pickle
 from qsm import *
 from utils import flatten_dict
 
-
 class PowerCurveConstructor:
     def __init__(self, wind_speeds):
         self.wind_speeds = wind_speeds
@@ -139,7 +138,7 @@ class PowerCurveConstructor:
             performance_indicators = []
 
         n_opt_vars = len(xf[0])
-        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2)
+        fig, ax = plt.subplots(max([n_opt_vars, 6]), 2, sharex=True)
         # In the left column plot each optimization variable against the wind speed.
         scl = [1e-3, 1e-3, 180/np.pi, 180/np.pi, 180/np.pi, 1, 1]
         for i in range(n_opt_vars):
@@ -239,8 +238,6 @@ class PowerCurveConstructor:
         mpl.colors.BoundaryNorm(bounds, cmap.N)
         im1 = ax[4, 1].matshow(color_code_matrix, cmap=cmap, vmin=bounds[0], vmax=bounds[-1],
                                     extent=[self.wind_speeds[0], self.wind_speeds[-1], n_cons, 0])
-        ax[4, 1].set_xticks([])
-        ax[4, 1].set_xticklabels([])
         
         ax[4, 1].set_yticks(np.array(range(n_cons))+.5)
         ax[4, 1].set_yticklabels(range(n_cons))
