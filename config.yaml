@@ -28,8 +28,8 @@ bounds:
     min: 30.                    # deg
     max: 45.                    # deg
   relative_elevation: # Maximum elevation relative to the average elevation (max flight cone height)
-    min: 6                      # deg
-    max: 8                      # deg 
+    min: 8                      # deg
+    max: 12                      # deg 
   force_limits: # Minimum force to have control on the kite 
     min: 300                    # kgf
     max: 2750                   # kgf
