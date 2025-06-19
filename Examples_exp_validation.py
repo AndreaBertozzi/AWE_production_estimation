@@ -308,32 +308,11 @@ def example_8():
 
     # --- Load kite system properties --- 
     sys_props = load_config('config.yaml')    
-    sys_props = SystemProperties(sys_props)   
+    sys_props = SystemProperties(sys_props) 
 
+    _, all_cycle_res_sim, _, all_cycle_res_exp = \
+        run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props, control='speed')
     
-    all_sim_dataframes = [] 
-    all_exp_dataframes = []
-    all_cycle_res_sim = pd.DataFrame()  
-    all_cycle_res_exp = pd.DataFrame() 
-
-    for i, exp_cycle_dataframe in enumerate(cycle_dataframe_list):
-        try:
-            sim_cycle_dataframe, cycle_res_sim_dict = run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, control = 'speed')
-            # Append experimental results
-            exp_cycle_dataframe = find_qsm_flight_phases(exp_cycle_dataframe)
-            all_exp_dataframes.append(exp_cycle_dataframe)         
-            cycle_res_exp_dict = pack_operational_parameters_and_results(exp_cycle_dataframe)
-            all_cycle_res_exp = pd.concat([all_cycle_res_exp, pd.DataFrame([cycle_res_exp_dict])])    
-
-            # Append simulation results
-            all_sim_dataframes.append(sim_cycle_dataframe)        
-            all_cycle_res_sim = pd.concat([all_cycle_res_sim, pd.DataFrame([cycle_res_sim_dict])])   
-
-        except Exception as e:
-            print(f'Sim failed for cycle {i}: {e}')
-            continue
-    print("Simulation complete.")
-
     data_to_plot = ['cycle_mech_power_avg_kW', 'RO_reelout_speed_avg_mps', 'RO_tether_force_avg_N']
     labels = ['Cycle mech. power [kW]', 'Reel-out speed [m/s]', 'Reel-out tether force [N]']
 
@@ -347,3 +326,52 @@ def example_8():
     plt.tight_layout()   
     ax[-1].legend(['Experimental data', 'Simulation data']) 
     plt.show()
+
+def example_9():
+    ec = '#00395d'
+    sc = '#00aeef'
+    def bin_wind_speeds(dataframe, low=4, up=19, int=1):
+        # Define bin edges and labels
+        bins = np.arange(low, up, int)
+        labels = bins[:-1] + int/2 # Labels are lower bin edges
+
+        # Create the bins
+        dataframe['wind_bin_100m_mps'] = pd.cut(dataframe['wind_speed_100m_mps'],
+                                                 bins=bins, labels=labels, right=False)
+
+        # Group by the bins and calculate mean power
+        binned_dataframe = dataframe.groupby('wind_bin_100m_mps')['cycle_mech_power_avg_kW'].agg(
+            cycle_mech_power_avg_kW_mean='mean',
+            cycle_mech_power_avg_kW_std='std'
+            ).reset_index()
+
+        return binned_dataframe
+    
+    with open('examples_data/experimental_cycles_list_example.pkl', "rb") as file: cycle_dataframe_list = pickle.load(file)
+
+    # --- Load kite system properties --- 
+    sys_props = load_config('config.yaml')    
+    sys_props = SystemProperties(sys_props)   
+    
+    _, all_cycle_res_sim, _, all_cycle_res_exp = \
+        run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props, control='speed')
+    
+    binned_dataframe_exp = bin_wind_speeds(all_cycle_res_exp)
+    binned_dataframe_sim = bin_wind_speeds(all_cycle_res_sim)
+    
+    plt.errorbar(binned_dataframe_exp.wind_bin_100m_mps, binned_dataframe_exp.cycle_mech_power_avg_kW_mean,
+                yerr = binned_dataframe_exp.cycle_mech_power_avg_kW_std, elinewidth = 1.5, capsize = 5, c=ec, ms = 6,
+                    marker='o', linewidth = 0)
+
+    plt.errorbar(binned_dataframe_sim.wind_bin_100m_mps, binned_dataframe_sim.cycle_mech_power_avg_kW_mean,
+                yerr = binned_dataframe_sim.cycle_mech_power_avg_kW_std, elinewidth = 1.5, capsize = 5, c=sc, ms = 6,
+                    marker='o', linewidth = 0)
+
+
+    plt.xlabel('Windspeed [m/s]')
+    plt.ylabel('Cycle power [kW]')
+    plt.legend(['Experiment', 'Simulation'])
+    plt.show()
+
+
+example_9()
