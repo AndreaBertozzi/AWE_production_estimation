@@ -428,5 +428,42 @@ def example_9():
     plt.legend(['Experiment', 'Simulation'])
     plt.show()
 
+def main():
+    import sys
 
-example_9()
+    # Mapping from option number to example function
+    example_funcs = {
+        "1": example_1,
+        "2": example_2,
+        "3": example_3,
+        "4": example_4,
+        "5": example_5,
+        "6": example_6,
+        "7": example_7,
+        "8": example_8,
+        "9": example_9,
+    }
+
+    print("Examples about experimental validation and comparison of the QSM model\n")
+    print("Select an example to run:")
+    for i in range(1, 10):
+        print(f"  {i}. example_{i}()")
+
+    choice = input("\nEnter the number of the example to run (1-9), or 'q' to quit: ").strip()
+
+    if choice.lower() == 'q':
+        print("Exiting.")
+        sys.exit(0)
+
+    if choice in example_funcs:
+        print(f"\nRunning example_{choice}()...\n")
+        try:
+            example_funcs[choice]()
+        except Exception as e:
+            print(f"An error occurred while running example_{choice}: {e}")
+    else:
+        print("Invalid choice. Please enter a number between 1 and 9.")
+
+# Optional: run main if script is called directly
+if __name__ == "__main__":
+    main()
