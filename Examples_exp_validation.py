@@ -2,9 +2,68 @@ from exp_validation_utils import *
 from qsm import *
 from utils import *
 import pickle
-
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+
+"""
+This file provides a collection of `example_*` functions that load an experimental kite-power system cycle
+from a pickle file (prepared via Protologger), analyze flight phases, and benchmark against corresponding simulations.
+Visualizations cover reel-in/out transitions, depower control, 3D-to-2D trajectory mapping, and aggregated performance plots.
+
+Functions
+---------
+example_1()
+    Plot the start and end of the **Reeling Out (RO)** phase:
+    - Ground tether length with vertical lines marking start/end of RO (using QSM thresholds)
+    - Kite depower signal overlay with threshold-based markers
+
+example_2()
+    Plot the end of the **Reeling In (RI)** phase:
+    - Tether length traces showing the point of minimum length
+    - Kite depower trace with threshold marker at the start of re‑powering
+
+example_3()
+    Run and compare a **speed controlled** simulation against experimental data:
+    - Packs operational parameters
+    - Runs simulation for the same cycle
+    - Overlays time-series via `cycle_to_cycle_plot()`
+
+example_4()
+    Same as `example_3()`, but using **force controlled** simulation.
+
+example_5()
+    Same as `example_3()`, but using **hybrid control** (speed + force).
+
+example_6()
+    Visualize the **RO pattern in 2D**:
+    - Computes kite XYZ positions based on tether, azimuth, elevation
+    - Extracts average/relative elevation and max azimuth
+    - Plots elevation profile and plan-view trajectory arcs
+
+example_7()
+    Compare simulated vs experimental **RO pattern trajectories**:
+    - Uses force controlled simulation
+    - Overplots experimental and simulated RO trajectories in both elevation and plan views
+
+example_8()
+    Batch process multiple cycles:
+    - Loads a list of exp cycles via Protologger
+    - Runs speed controlled simulations for each
+    - Scatter plots cycle-averaged metrics (power, reel-out speed, tether force) vs wind speed
+
+example_9()
+    Aggregated **wind speed binned comparison** between experiment and simulation:
+    - Bins cycles by 100 m wind speed
+    - Computes mean ± std of cycle mechanical power per bin
+    - Plots error-bar curves overlaying experimental vs simulated results
+
+Usage
+-----
+- Ensure `examples_data/experimental_cycle_example.pkl` and, if using `example_8/9`, 
+  `examples_data/experimental_cycles_list_example.pkl` are present.
+- Configure the kite system via `config.yaml`.
+- Run any `example_*()` to generate the corresponding plot(s) and visual analysis
+"""
 
 colors = ["#F85033",  # Tomato
           "#4682B4",  # SteelBlue
@@ -14,7 +73,6 @@ colors = ["#F85033",  # Tomato
 # Create the colormap
 my_cmap = mcolors.ListedColormap(colors)
 
-# Visualize the start and end of the reeling-out (RO) phase in an experimental kite power system cycle.
 def example_1():
     # Uncomment the following section to read the Protologger file once you downloaded some. For the example we are reading the 
     # pickle file from 'examples_data/experimental_cycle_example.pkl'.
@@ -78,7 +136,6 @@ def example_1():
     plt.tight_layout()
     plt.show()
 
-# Visualize the start and end of the reeling-in (RI) phase in an experimental kite power system cycle.
 def example_2():
     # See example 1 on how to get the example_exp_cycle
     with open('examples_data/experimental_cycle_example.pkl', "rb") as file: example_exp_cycle = pickle.load(file)
@@ -123,7 +180,6 @@ def example_2():
 
     plt.tight_layout()
     plt.show()
-
 
 def example_3():
     # See example 1 on how to get the example_exp_cycle
@@ -284,7 +340,6 @@ def example_7():
     plt.xticks([], [])
     plt.yticks([], [])
     plt.show()
-
 
 def example_8():
     # Some other test names
