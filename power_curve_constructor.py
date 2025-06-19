@@ -101,10 +101,7 @@ class PowerCurveConstructor:
                 continue
 
             x_kite, z_kite = zip(*[(kp.x, kp.z) for kp in kpis['kinematics']])
-            # try:
-            #     z_traj = [kp.z for kp in kite_positions['trajectory']]
-            # except AttributeError:
-            #     z_traj = [np.sin(kp.elevation_angle)*kp.straight_tether_length for kp in kite_positions['trajectory']]
+
             ax.plot(x_kite, z_kite, label="$v_{100m}$="+"{:.1f} ".format(v) + "m s$^{-1}$")
 
         # Plot semi-circle at constant tether length bound.
