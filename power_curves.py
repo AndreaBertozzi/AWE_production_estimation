@@ -237,7 +237,7 @@ def load_power_curve_logprofile_results_and_plot_trajectories(labels = None):
 
 def compare_kpis(power_curves):
     """Plot how performance indicators change with wind speed for all generated power curves."""
-    fig_nums = [plt.figure().number for _ in range(5)]
+    fig_nums = [plt.figure().number for _ in range(7)]
     for pc in power_curves:
         plt.figure(fig_nums[0])
         f_out_min = [kpis['min_tether_force']['out'] for kpis in pc.performance_indicators]
@@ -287,6 +287,22 @@ def compare_kpis(power_curves):
         plt.xlabel('$v_{w,100m}$ [m/s]')
         plt.ylabel('Reel-out elevation angle [deg]')
 
+        plt.figure(fig_nums[5])
+        power = [kpis['average_power']['cycle'] for kpis in pc.performance_indicators]
+        plt.plot(pc.wind_speeds, power)
+        plt.grid(True)
+        plt.xlabel('$v_{w,100m}$ [m/s]')
+        plt.ylabel('Average cycle power [W]')
+
+        plt.figure(fig_nums[6])
+        power = [kpis['average_power']['out'] for kpis in pc.performance_indicators]
+        plt.plot(pc.wind_speeds, power)
+        plt.grid(True)
+        plt.xlabel('$v_{w,100m}$ [m/s]')
+        plt.ylabel('Average reel-out power [W]')
+
+
+
 
 def export_to_csv_log_profile(v, v_cut_out, p, x_opts, n_cwp):
     df = {
@@ -329,7 +345,7 @@ if __name__ == "__main__":
     x0_force = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
     x0_speed = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
     sys_props = SystemProperties(load_config('config.yaml'))
-    pc = generate_power_curves_logprofile(x0_force, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
+    #pc = generate_power_curves_logprofile(x0_force, sys_props=sys_props, vw_cut_in=5.6, vw_cut_out=19)
     pc = load_power_curve_logprofile_results_and_plot_trajectories(labels)
     plt.show()
 
