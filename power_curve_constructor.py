@@ -11,8 +11,8 @@ from utils import flatten_dict
 class PowerCurveConstructor:
     def __init__(self, wind_speeds):
         self.wind_speeds = wind_speeds
-
         self.optimization_settings = {'max_iter': 50, 'i_print': 0, 'ftol': 1e-6, 'eps': 1e-6}
+
         self.x_opts = []
         self.x0 = []
         self.optimization_details = []
@@ -41,7 +41,6 @@ class PowerCurveConstructor:
             cons, kpis = power_optimizer.eval_point(relax_errors=True)
             sim_successful = False
 
-        print("cons:", cons)
         self.constraints.append(cons)
         kpis['sim_successful'] = sim_successful
         self.performance_indicators.append(kpis)
