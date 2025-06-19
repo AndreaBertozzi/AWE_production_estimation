@@ -1,7 +1,7 @@
 from qsm import *
 from utils import *
 
-# Very simple example: Simulation of the complete pumping cycle simulation using the quasi steady model.
+# Simulation of the complete pumping cycle simulation using the quasi steady model. System properties are declared as dictionary
 # The environmental state is represented by a logarithmic profile. 
 # The traction phase of the cycle is simplified to a straight line (with fixed elevation, azimuth, and course angles) 
 # representative of the crosswind fligth of the kite
@@ -78,7 +78,7 @@ def example_1():
     cycle.trajectory_plot3d()
     plt.show()
 
-# Very simple example: Simulation of the complete pumping cycle simulation using the quasi steady model.
+# Simulation of the complete pumping cycle simulation using the quasi steady model. System properties are loaded from the config.yaml file.
 # The environmental state is represented by a logarithmic profile. 
 # The traction phase of the cycle is represented by a lemniscate (figure of eight trajectory)
 def example_2():
