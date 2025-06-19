@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Utility functions."""
-
 import matplotlib.pyplot as plt
 import yaml
 from numpy import all, diff, array
 from math import pi
 
+ 
 
 def flatten_dict(input_dict, parent_key='', sep='.'):
     """Recursive function to convert multi-level dictionary to flat dictionary.
