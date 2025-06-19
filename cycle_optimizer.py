@@ -58,7 +58,7 @@ class Optimizer:
         self.x_opt_real_scale = None
         self.op_res = None
 
-    def eval_point(self, plot_result=False, relax_errors=False, x_real_scale=None):
+    def eval_point(self, plot_result=False, relax_errors=False, x_real_scale=None, labels=None):
         """Evaluate simulation results using the provided optimization vector. Uses either the optimization vector
         provided as argument, the optimal vector, or the starting point for the simulation."""
         if x_real_scale is None:
@@ -66,7 +66,7 @@ class Optimizer:
                 x_real_scale = self.x_opt_real_scale
             else:
                 x_real_scale = self.x0_real_scale
-        kpis = self.eval_performance_indicators(x_real_scale, plot_result, relax_errors)
+        kpis = self.eval_performance_indicators(x_real_scale, plot_result, relax_errors, labels=labels)
         cons = self.eval_fun(x_real_scale, False, relax_errors=relax_errors)[1]
         return cons, kpis
 
@@ -570,7 +570,7 @@ class OptimizerCycle(Optimizer):
 
         return obj, ineq_cons
 
-    def eval_performance_indicators(self, x_real_scale, plot_result=False, relax_errors=True):
+    def eval_performance_indicators(self, x_real_scale, plot_result=False, relax_errors=True, labels=None):
         """Method running the simulation and returning the performance indicators needed to calculate the objective and
         constraint functions."""
         if self.force_or_speed_control == 'force':
@@ -620,7 +620,7 @@ class OptimizerCycle(Optimizer):
             cycle.trajectory_plot3d()
             
             phase_switch_points = [cycle.transition_phase.time[0], cycle.traction_phase.time[0]]
-            cycle.time_plot(['straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'],
+            cycle.time_plot(('straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'), y_labels=labels,
                             plot_markers=phase_switch_points)
             
         tether_length = [k.straight_tether_length for k in cycle.kinematics]
@@ -666,116 +666,3 @@ class OptimizerCycle(Optimizer):
             'kinematics': cycle.kinematics,
         }
         return res
-
-
-def test_force():
-    from qsm import LogProfile, TractionPhasePattern, SystemProperties
-    from utils import load_config
-        
-    sys_props_v9 = SystemProperties(load_config('config.yaml'))
-    env_state = LogProfile()
-    env_state.set_reference_wind_speed(10.)
-
-    cycle_sim_settings = {
-        'cycle': {
-            'traction_phase': TractionPhasePattern,
-            'include_transition_energy': True,
-        },
-        'retraction': {'time_step': 0.5
-                       },
-        'transition': {'time_step': 0.5,
-        },
-        'traction': {'time_step': 0.5
-        },
-    }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v9, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
-                         reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='force')
-    
-    oc.x0_real_scale = np.array([24000., 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
-    x_opt = oc.optimize(iprint=2, maxiter=100)
-
-    print('Opt. solution: ', x_opt)
-    cons, kpis = oc.eval_point(True, x_real_scale=x_opt)
-    print('Successful optimisation: ', oc.op_res['success'])        
-    print('Constraints: ', cons) 
-    plt.show()
-
-def test_speed():
-    from qsm import LogProfile, TractionPhasePattern, SystemProperties
-    from utils import load_config
-        
-    sys_props_v9 = SystemProperties(load_config('config.yaml'))
-    env_state = LogProfile()
-    env_state.set_reference_wind_speed(10.)
-
-    cycle_sim_settings = {
-        'cycle': {
-            'traction_phase': TractionPhasePattern,
-            'include_transition_energy': True,
-        },
-        'retraction': {'time_step': 0.5
-                       },
-        'transition': {'time_step': 0.5,
-        },
-        'traction': {'time_step': 0.5
-        },
-    }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v9, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
-                         reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='speed')
-    
-    oc.x0_real_scale = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
-    x_opt = oc.optimize(iprint=2, maxiter=100)
-
-    print('Opt. solution: ', x_opt)
-    cons, kpis = oc.eval_point(True, x_real_scale=x_opt)
-    print('Successful optimisation: ', oc.op_res['success'])        
-    print('Constraints: ', cons) 
-    plt.show()
-
-def test_hybrid():
-    from qsm import LogProfile, TractionPhasePattern, SystemProperties
-    from utils import load_config
-        
-    sys_props_v9 = SystemProperties(load_config('config.yaml'))
-    env_state = LogProfile()
-    env_state.set_reference_wind_speed(10.)
-
-    cycle_sim_settings = {
-        'cycle': {
-            'traction_phase': TractionPhasePattern,
-            'include_transition_energy': True,
-        },
-        'retraction': {'time_step': 0.5
-                       },
-        'transition': {'time_step': 0.5,
-        },
-        'traction': {'time_step': 0.5
-        },
-    }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props_v9, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
-                         reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='hybrid')
-    
-    oc.x0_real_scale = np.array([1.5, 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
-    x_opt = oc.optimize(iprint=2, maxiter=100)
-
-    print('Opt. solution: ', x_opt)
-    cons, kpis = oc.eval_point(True, x_real_scale=x_opt)
-    print('Successful optimisation: ', oc.op_res['success'])        
-    print('Constraints: ', cons) 
-    plt.show()
-
-if __name__ == "__main__":
-    test_force()
-    # EXAMPLE OUTPUT FROM TEST:
-    """
-    Optimization terminated successfully    (Exit mode 0)
-                Current function value: -0.7207391615666787
-                Iterations: 12
-                Function evaluations: 78
-                Gradient evaluations: 12
-    Opt. solution:  [2.28363626e+04 3.18573904e+03 5.23598776e-01 1.57079633e-01
-    5.67232007e-01 1.49998266e+02 2.48020651e+02]
-    Successful optimisation:  True
-    Constraints:  [9.99999964e-07 1.00000000e-06 1.53159082e-01 3.01644069e+00
-    2.10266713e+01 1.98108317e+00 5.57715138e-06]
-    """
