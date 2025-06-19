@@ -20,7 +20,7 @@ example_1()
 example_2()
     Plot the end of the **Reeling In (RI)** phase:
     - Tether length traces showing the point of minimum length
-    - Kite depower trace with threshold marker at the start of re‑powering
+    - Kite depower trace with threshold marker at the start of re-powering
 
 example_3()
     Run and compare a **speed controlled** simulation against experimental data:
@@ -165,7 +165,7 @@ def example_2():
 
     ax[1].scatter(example_exp_cycle.time[end_RI_idx] - start_time,
                   example_exp_cycle.kite_actual_depower[end_RI_idx],
-                  c='#d62828', label='Start powering', zorder=3)
+                  c='#d62828', label='Finish powering', zorder=3)
 
     y_lb, y_ub = ax[1].get_ylim()
     ax[1].vlines(example_exp_cycle.time[end_RI_idx] - start_time, y_lb, y_ub,
