@@ -3,7 +3,7 @@
 
 # Kite mass, area, and aerodynamic properties
 kite:
-  mass: 60                      # kg
+  mass: 94                      # kg
   projected_area: 46.86         # m2
   drag_coefficient:
     powered: 0.14
@@ -14,7 +14,7 @@ kite:
 
 # Tether properties
 tether:
-  length: 400                   # m
+  length: 360                   # m
   diameter: 0.014               # m
   density: 617.1314119889819    # kg/m3
   drag_coefficient: 1.1         # -
@@ -25,22 +25,22 @@ bounds:
     min: 30.                    # deg
     max: 60.                    # deg
   max_azimuth:  # Maximum azimuth angle during reel out (max flight cone width)
-    min: 30.                    # deg
-    max: 45.                    # deg
+    min: 25.                    # deg
+    max: 50.                    # deg
   relative_elevation: # Maximum elevation relative to the average elevation (max flight cone height)
-    min: 8                      # deg
-    max: 12                      # deg 
+    min: 8.                      # deg
+    max: 12.                     # deg 
   force_limits: # Minimum force to have control on the kite 
     min: 300                    # kgf
-    max: 2750                   # kgf
+    max: 2200                   # kgf
   speed_limits: # Should be both positive, so the full range is [-max, -min] U [min, max]
     min: 0.0                    # m/s
-    max: 10.5                   # m/s
+    max: 9.8                    # m/s
   tether_stroke:
-    min: 50                     # m
+    min: 75                     # m
     max: 150                    # m
   minimum_tether_length: # Tether length at start of reel-out
-    min: 160                    # m
-    max: 300                    # m
+    min: 180                    # m
+    max: 240                    # m
   
   
