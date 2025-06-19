@@ -626,7 +626,32 @@ def pack_results_sim(cycle, env_state):
     
     return sim_cycle_dataframe, sim_cycle_res_dict
 
+def run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props, control='speed'):
+    all_sim_dataframes = [] 
+    all_exp_dataframes = []
+    all_cycle_res_sim = pd.DataFrame()  
+    all_cycle_res_exp = pd.DataFrame() 
 
+    for i, exp_cycle_dataframe in enumerate(cycle_dataframe_list):
+        try:
+            sim_cycle_dataframe, cycle_res_sim_dict = run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, control = control)
+            # Append experimental results
+            exp_cycle_dataframe = find_qsm_flight_phases(exp_cycle_dataframe)
+            all_exp_dataframes.append(exp_cycle_dataframe)         
+            cycle_res_exp_dict = pack_operational_parameters_and_results(exp_cycle_dataframe)
+            all_cycle_res_exp = pd.concat([all_cycle_res_exp, pd.DataFrame([cycle_res_exp_dict])])    
+
+            # Append simulation results
+            all_sim_dataframes.append(sim_cycle_dataframe)        
+            all_cycle_res_sim = pd.concat([all_cycle_res_sim, pd.DataFrame([cycle_res_sim_dict])])   
+
+        except Exception as e:
+            print(f'Sim failed for cycle {i}: {e}')
+            continue
+    print("Simulation complete.")
+    
+    return all_sim_dataframes, all_cycle_res_sim, all_exp_dataframes, all_cycle_res_exp
+    
 def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     colors = ["#F85033",  # Tomato
           "#4682B4",  # SteelBlue
