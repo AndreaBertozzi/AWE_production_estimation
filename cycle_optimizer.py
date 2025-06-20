@@ -536,7 +536,7 @@ class OptimizerCycle(Optimizer):
             speed_out_setpoint_max = -(res['max_reeling_speed']['out'] - x_real_scale[0]) + 1e-6
             speed_in_setpoint_min = (res['min_reeling_speed']['in'] - x_real_scale[1]) + 1e-6
 
-            # The maximum reel-out speed can be exceeded when the speed control is overruled by the minimum
+            # The maximum reel-out speed can be exceeded when the speed control is overruled by the maximum
             # reel-out force limit and the imposed reel-out force yields a reel-out speed exceeding its set point. This
             # scenario is prevented by the lower constraint.
             speed_max_limit = self.system_properties.reeling_speed_max_limit
