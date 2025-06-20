@@ -136,11 +136,15 @@ def generate_power_curves_single_profile(config_filename):
 
     return pc
 
-def load_power_curve_single_profile_results_and_plot_trajectories(config_filename, labels = None):
+def load_power_curve_single_profile_results_and_plot_trajectories(config_filename):
     """Plot trajectories from previously generated power curve."""
     with open(config_filename) as f:
         config = yaml.safe_load(f)
     # Parse system properties and bounds
+    control_mode, _, _, _ = parse_sim_settings(config) 
+    if control_mode == 'force':
+        labels = [r'$F_{T, RO}$', r'$F_{T, RI}$', r'$\theta_{avg}$', r'$\theta_{rel}$', r'$\phi_{max}$',\
+                                r'$\Delta L$', r'$L_{min}$']
 
     sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
@@ -154,7 +158,6 @@ def load_power_curve_single_profile_results_and_plot_trajectories(config_filenam
                                 reeling_speed_limits=[sys_props.reeling_speed_min_limit, sys_props.reeling_speed_max_limit])
 
     return pc
-
 
 def compare_kpis(power_curves):
     """Plot how performance indicators change with wind speed for all generated power curves."""
@@ -224,14 +227,9 @@ def compare_kpis(power_curves):
 
 if __name__ == "__main__":
     # Set optimization settings 
-
-    labels = [r'$F_{T, RO}$', r'$F_{T, RI}$', r'$\theta_{avg}$', r'$\theta_{rel}$', r'$\phi_{max}$',\
-                            r'$\Delta L$', r'$L_{min}$']
     
-    x0_force = np.array([7100, 2950, 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
-    x0_speed = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
-    #pc = generate_power_curves_single_profile('config.yaml')
-    pc = load_power_curve_single_profile_results_and_plot_trajectories('config.yaml', labels)
+    pc = generate_power_curves_single_profile('config.yaml')
+    #pc = load_power_curve_single_profile_results_and_plot_trajectories('config.yaml')
     plt.show()
 
 
