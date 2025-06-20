@@ -3,7 +3,8 @@
 import matplotlib.pyplot as plt
 import yaml
 from numpy import all, diff, array
-from math import pi
+
+import math
 
  
 
@@ -117,12 +118,12 @@ def parse_system_properties_and_bounds(config):
         "tether_drag_coefficient": tether["drag_coefficient"],
 
         # Bounds
-        "avg_elevation_min_limit": bounds["avg_elevation"]["min"]*pi/180,
-        "avg_elevation_max_limit": bounds["avg_elevation"]["max"]*pi/180,
-        "max_azimuth_min_limit": bounds["max_azimuth"]["min"]*pi/180,
-        "max_azimuth_max_limit": bounds["max_azimuth"]["max"]*pi/180,
-        "rel_elevation_min_limit": bounds["relative_elevation"]["min"]*pi/180,
-        "rel_elevation_max_limit": bounds["relative_elevation"]["max"]*pi/180,
+        "avg_elevation_min_limit": bounds["avg_elevation"]["min"]*math.pi/180,
+        "avg_elevation_max_limit": bounds["avg_elevation"]["max"]*math.pi/180,
+        "max_azimuth_min_limit": bounds["max_azimuth"]["min"]*math.pi/180,
+        "max_azimuth_max_limit": bounds["max_azimuth"]["max"]*math.pi/180,
+        "rel_elevation_min_limit": bounds["relative_elevation"]["min"]*math.pi/180,
+        "rel_elevation_max_limit": bounds["relative_elevation"]["max"]*math.pi/180,
         "reeling_speed_min_limit": bounds["speed_limits"]["min"],
         "reeling_speed_max_limit": bounds["speed_limits"]["max"],
         "tether_force_min_limit": bounds["force_limits"]["min"]*9.806,
@@ -135,21 +136,43 @@ def parse_system_properties_and_bounds(config):
 
     return params_dict
 
-import numpy as np
-import math
-
 def parse_opt_variables(config):
-    expected_order = [
-        "F_RO",
-        "F_RI",
-        "average_elevation",
-        "relative_elevation",
-        "maximum_azimuth",
-        "minimum_tether_length",
-        "tether_stroke"
-    ]
+    control_mode, _, _, _ = parse_sim_settings(config)
 
     angle_vars = {"average_elevation", "relative_elevation", "maximum_azimuth"}
+
+    if control_mode == 'force':
+        expected_order = [
+            "F_RO",
+            "F_RI",
+            "average_elevation",
+            "relative_elevation",
+            "maximum_azimuth",
+            "minimum_tether_length",
+            "tether_stroke"
+        ]
+    
+    elif control_mode == 'speed':
+        expected_order = [
+            "v_RO",
+            "v_RI",
+            "average_elevation",
+            "relative_elevation",
+            "maximum_azimuth",
+            "minimum_tether_length",
+            "tether_stroke"
+        ]
+    
+    elif control_mode == 'hybrid':
+        expected_order = [
+            "v_RO",
+            "F_RI",
+            "average_elevation",
+            "relative_elevation",
+            "maximum_azimuth",
+            "minimum_tether_length",
+            "tether_stroke"
+        ]
 
     opt_vars = config.get("opt_variables", {})
     init_values = []
@@ -180,8 +203,8 @@ def parse_opt_variables(config):
         init_values.append(init_val)
         enabled_flags.append(enabled)
 
-    enabled_indices = np.array([i for i, flag in enumerate(enabled_flags) if flag])
-    init_values_array = np.array(init_values)
+    enabled_indices = array([i for i, flag in enumerate(enabled_flags) if flag])
+    init_values_array = array(init_values)
 
     return enabled_indices, init_values_array
 
@@ -226,8 +249,8 @@ def parse_constraints(config):
                 val = math.radians(val)  # convert to radians
             param_values.append(val)
 
-    enabled_indices = np.array([i for i, flag in enumerate(enabled_flags) if flag])
-    param_values_array = np.array(param_values)
+    enabled_indices = array([i for i, flag in enumerate(enabled_flags) if flag])
+    param_values_array = array(param_values)
 
     return enabled_indices, param_values_array
 
