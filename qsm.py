@@ -182,13 +182,13 @@ class LogProfile(EnvAtmosphericPressure):
         heights = [50., 75., 100., 150., 200., 300.]
         wind_speeds = [self.calculate_wind(h) for h in heights]
         plt.plot(wind_speeds, heights)
-        #fig = plt.gcf()
-        #fig.set_figwidth(3)
-        #fig.set_figheight(3.5)      
-        #plt.xlabel('Wind speed [m/s]')
-        #plt.ylabel('Height [m]')
-        #plt.grid(True)
-        #plt.tight_layout()
+        fig = plt.gcf()
+        fig.set_figwidth(3)
+        fig.set_figheight(3.5)      
+        plt.xlabel('Wind speed [m/s]')
+        plt.ylabel('Height [m]')
+        plt.grid(True)
+        plt.tight_layout()
 
 
 
@@ -1124,12 +1124,18 @@ class TimeSeries:
                 the given integer.
 
         """
-        from mpl_toolkits.mplot3d import axes3d
+        from mpl_toolkits.mplot3d import Axes3D
         from mpl_toolkits.mplot3d.art3d import Line3DCollection
         from matplotlib.colors import ListedColormap
         from itertools import cycle
+
+        def get_3d_axis(fig):
+            for ax in fig.axes:
+                if hasattr(ax, 'get_proj'):  # 3D axes have this method
+                    return ax
+            return fig.add_subplot(111, projection='3d')  # create if none exists
         fig = plt.figure(fig_num)
-        ax = fig.gca(projection='3d')
+        ax = get_3d_axis(fig)
 
         if plot_point_type is not None:
             point_types = getattr(self, 'phase_id', np.zeros(self.n_time_points))
@@ -1224,7 +1230,7 @@ class Phase(TimeSeries):
         reeling_tether_length (float): Tether length that is reeled out [m].
 
     """
-    def __init__(self, phase_settings, impose_operational_limits=True):  # control_settings default value use to be ('tether_force_ground', 1200)
+    def __init__(self, phase_settings, impose_operational_limits=True): 
         """
         Args:
             phase_settings (tuple): Value for `control_settings` attribute.
@@ -1237,6 +1243,8 @@ class Phase(TimeSeries):
 
         # Control settings.
         self.control_settings = phase_settings['control']
+        # Pattern settings
+        self.liss_pattern_settings = phase_settings.get('pattern', None)
         self.impose_operational_limits = impose_operational_limits
         self.kite_powered = True
         self.follow_wind = False
@@ -1879,7 +1887,6 @@ class TractionPhaseHybrid(TractionPhase):
         super().run_simulation(system_properties, environment_state, steady_state_config, timer_start)
 
         tether_lengths = np.linspace(self.tether_length_start_aim, self.tether_length_end, n_patterns)
-
         pattern_durations = []
         reeling_speeds = []
         for le in tether_lengths:
@@ -1891,7 +1898,8 @@ class TractionPhaseHybrid(TractionPhase):
                 'tether_length': le,
                 'elevation_angle_ref': elev,
                 'control': self.control_settings,
-                'time_step': .5,
+                'pattern': self.liss_pattern_settings,
+                'time_step': .5,                
             }
             pattern = EvaluatePattern(pattern_settings)
             pattern.enable_limit_violation_error = False
@@ -2073,6 +2081,7 @@ class EvaluatePattern(Phase):  # Determine performance along cross wind pattern 
 
         # Control settings.
         self.control_settings = settings['control']
+        self.liss_pattern_settings = settings['pattern']
         self.impose_operational_limits = impose_operational_limits
         self.kite_powered = True
         self.follow_wind = False
@@ -2086,7 +2095,7 @@ class EvaluatePattern(Phase):  # Determine performance along cross wind pattern 
 
         # Monitoring settings.
         self.enable_limit_violation_error = True
-        self.pattern = LissajousPattern()
+        self.pattern = LissajousPattern(self.liss_pattern_settings)
 
     def calc_performance_along_pattern(self, system_properties, environment_state, n_points=100, steady_state_config={}, print_details=False):
         self.time, self.kinematics, self.steady_states = [0.], [], []
@@ -2374,6 +2383,7 @@ class Cycle(TimeSeries):
             fig_num (int, optional): Number of figure used for the plot, if None a new figure is created.
 
         """
+
         if fig_num is None:
             plt.figure()
         fig_num = plt.gcf().number

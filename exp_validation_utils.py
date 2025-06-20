@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 
 from scipy import signal
-
 from qsm import * 
 
 def load_process_protologger_file(data_path, test_name):
