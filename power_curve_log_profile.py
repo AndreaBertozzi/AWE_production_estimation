@@ -82,9 +82,11 @@ def generate_power_curves_single_profile(config_filename):
     wind_speeds = np.array(ref_windspeeds)
     vw_cut_in = wind_speeds[0]
     vw_cut_out = wind_speeds[-1]
-    wind_speeds[-1] = vw_cut_out - 1    
-    wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 6)))
-
+    if vw_cut_out >= 15:
+        wind_speeds[-1] = vw_cut_out - 1    
+        wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 6)))
+    
+    
     # Optimization variables: Force RO, Force RI, Avg. elevation [rad], Rel. elevation [rad],
     #                          Max. azimuth [rad], Reel-in tether length [m], Minimum tether length [m]
     op_cycle_pc = OptimizerCycle(cycle_sim_settings_pc, sys_props, env, otp_var_enabled_idx,
