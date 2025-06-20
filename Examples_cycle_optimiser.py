@@ -33,6 +33,7 @@ def example_1():
     # In this case we are optimising: F_RO, F_RI, theta_avg, Lmax_RO - Lmin_RO, Lmin_RO
     _, init_vals = parse_opt_variables(config)
     cons_enabled_idx, cons_param_vals = parse_constraints(config)
+    
     oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
                          reduce_ineq_cons=cons_enabled_idx, parametric_cons_values=cons_param_vals, force_or_speed_control='force')
     

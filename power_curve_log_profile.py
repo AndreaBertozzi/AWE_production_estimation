@@ -228,8 +228,6 @@ def compare_kpis(power_curves):
         plt.ylabel('Average reel-out power [W]')
 
 if __name__ == "__main__":
-    # Set optimization settings 
-    
     pc = generate_power_curves_single_profile('config.yaml')
     #pc = load_power_curve_single_profile_results_and_plot_trajectories('config.yaml')
     plt.show()
