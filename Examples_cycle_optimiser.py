@@ -3,11 +3,15 @@ import matplotlib.pyplot as plt
 import yaml
 from cycle_optimizer import OptimizerCycle
 from qsm import LogProfile, TractionPhasePattern, SystemProperties
-from utils import load_config
-from parser_config import parse_opt_variables, parse_constraints
+from utils import *
 
-def example_1():      
-    sys_props = SystemProperties(load_config('config.yaml'))
+def example_1():          
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    sys_props = parse_system_properties_and_bounds(config)
+    sys_props = SystemProperties(sys_props)
+
     env_state = LogProfile()
     env_state.set_reference_wind_speed(10.)
 
@@ -27,17 +31,14 @@ def example_1():
     # with reduce_x we select which optimisation variables to consider: all the possible variables are in order:
     # F_RO, F_RI, theta_avg, theta_rel, max_phi, Lmax_RO - Lmin_RO, Lmin_RO
     # In this case we are optimising: F_RO, F_RI, theta_avg, Lmax_RO - Lmin_RO, Lmin_RO
-    with open("config.yaml") as f:
-        config = yaml.safe_load(f)
-
-    otp_var_enabled_idx, init_vals = parse_opt_variables(config)
+    _, init_vals = parse_opt_variables(config)
     cons_enabled_idx, cons_param_vals = parse_constraints(config)
-    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = otp_var_enabled_idx,
+    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
                          reduce_ineq_cons=cons_enabled_idx, parametric_cons_values=cons_param_vals, force_or_speed_control='force')
     
     
     # A good initial condition is fundamental to speed up convergence
-    oc.x0_real_scale = init_vals# np.array([24000., 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    oc.x0_real_scale = init_vals
 
     # iprint > 1 is verbose
     x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3)
@@ -50,7 +51,12 @@ def example_1():
     plt.show()
 
 def example_2():  
-    sys_props = SystemProperties(load_config('config.yaml'))
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    sys_props = parse_system_properties_and_bounds(config)
+    sys_props = SystemProperties(sys_props)
+
     env_state = LogProfile()
     env_state.set_reference_wind_speed(10.)
 
@@ -66,25 +72,29 @@ def example_2():
         'traction': {'time_step': 0.5
         },
     }
-    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 4, 5, 6]),
-                         reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='speed')
+
+    cons_enabled_idx, cons_param_vals = parse_constraints(config)
+    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
+                         reduce_ineq_cons=cons_enabled_idx, parametric_cons_values=cons_param_vals, force_or_speed_control='speed')
     
-    oc.x0_real_scale = np.array([1.5, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
-    x_opt = oc.optimize(iprint=2, maxiter=100)
+    oc.x0_real_scale = np.array([3, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3)
 
     print('Opt. solution: ', x_opt)
     'straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'
-    ylabs = (r'$L_{tether}$ [m]', r'v_{reeling out} [m/s]', r'$F_{tether}$ [N]', r'$P_{ground}$ [W]')
+    ylabs = (r'$L_{tether}$ [m]', r'$v_{reeling out}$ [m/s]', r'$F_{tether}$ [N]', r'$P_{ground}$ [W]')
     cons, kpis = oc.eval_point(True, x_real_scale=x_opt, labels=ylabs)
     print('Successful optimisation: ', oc.op_res['success'])        
     print('Constraints: ', cons) 
     plt.show()
 
-def example_3():  
-    from qsm import LogProfile, TractionPhasePattern, SystemProperties
-    from utils import load_config
-        
-    sys_props = SystemProperties(load_config('config.yaml'))
+def example_3():          
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    sys_props = parse_system_properties_and_bounds(config)
+    sys_props = SystemProperties(sys_props)
+
     env_state = LogProfile()
     env_state.set_reference_wind_speed(10.)
 
@@ -103,8 +113,8 @@ def example_3():
     oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
                          reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='hybrid')
     
-    oc.x0_real_scale = np.array([1.5, 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  130, 250])
-    x_opt = oc.optimize(iprint=2, maxiter=30)
+    oc.x0_real_scale = np.array([1.5, 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3)
 
     print('Opt. solution: ', x_opt)
     cons, kpis = oc.eval_point(True, x_real_scale=x_opt)
@@ -113,7 +123,9 @@ def example_3():
     plt.show()
 
 if __name__ == "__main__":
-    example_1()
+    example_2()
+    example_3()
+    
     # EXAMPLE OUTPUT FROM TEST:
     """
     Optimization terminated successfully    (Exit mode 0)
