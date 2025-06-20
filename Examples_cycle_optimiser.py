@@ -123,8 +123,7 @@ def example_3():
     plt.show()
 
 if __name__ == "__main__":
-    example_2()
-    example_3()
+    example_1()
     
     # EXAMPLE OUTPUT FROM TEST:
     """
