@@ -138,6 +138,4 @@ def example_2():
     cycle.trajectory_plot3d()
     plt.show()
 
-
-
 example_2()
