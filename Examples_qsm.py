@@ -58,7 +58,8 @@ def example_1():
     # Create pumping cycle simulation object, run simulation, and plot results.
     cycle = Cycle(settings)
     cycle.follow_wind = True 
-    # Specifies whether kite is 'aligned' with the wind. Controlled azimuth angle is expressed w.r.t. wind reference frame if True, or ground reference frame if False.
+    # Specifies whether kite is 'aligned' with the wind. Controlled azimuth angle is 
+    # expressed w.r.t. wind reference frame if True, or ground reference frame if False.
 
     # TODO: Investigate the use of this function to check productivity with wind misalignment
 
@@ -86,11 +87,13 @@ def example_2():
     env_state = LogProfile()
     # Set reference height and wind speed
     env_state.set_reference_height(100)
-    env_state.set_reference_wind_speed(6.0)
+    env_state.set_reference_wind_speed(8.0)
 
     # Load system properties from config.yaml
-    sys_props = load_config('config.yaml')
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
 
+    sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
 
     # In terms of operational settings, in this example, we are using a simplified representation of an actual figure eight pattern based on 
@@ -134,3 +137,7 @@ def example_2():
     # Plotting the trajectory
     cycle.trajectory_plot3d()
     plt.show()
+
+
+
+example_2()

@@ -153,6 +153,9 @@ class LogProfile(EnvAtmosphericPressure):
 
     def set_reference_wind_speed(self, v):
         self.wind_speed_ref = v
+    
+    def set_roughness_length(self, h_0):
+        self.h_0 = h_0
 
     def calculate(self, height, altitude_ground=0.):
         altitude = height + altitude_ground

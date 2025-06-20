@@ -356,9 +356,10 @@ class Optimizer:
 
 class OptimizerCycle(Optimizer):
     def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None,
-                  reduce_ineq_cons=None, force_or_speed_control = 'force'): 
+                  reduce_ineq_cons=None, parametric_cons_values = [1, 100], force_or_speed_control = 'force'): 
               
         self.force_or_speed_control = force_or_speed_control
+        self.parametric_cons_values = parametric_cons_values
 
         if self.force_or_speed_control == 'force':
             """Tether force controlled cycle optimizer."""
@@ -491,7 +492,7 @@ class OptimizerCycle(Optimizer):
         # Common constraints
         # Constraint on the number of cross-wind patterns. It is assumed that a realistic reel-out trajectory should
         # include at least one crosswind pattern.
-        ineq_cons_cw_patterns = res["n_crosswind_patterns"] - 1
+        ineq_cons_cw_patterns = res["n_crosswind_patterns"] - self.parametric_cons_values[0]
 
         # Minimum tether length
         ineq_cons_min_tether_length = -res["min_tether_length"] + x_real_scale[6]
@@ -501,12 +502,12 @@ class OptimizerCycle(Optimizer):
                                          - x_real_scale[6] - x_real_scale[5])
 
         # Overflying ground station
-        ineq_cons_max_elevation = 100*np.pi/180 - res['max_elevation_angle']
+        ineq_cons_max_elevation = self.parametric_cons_values[1] - res['max_elevation_angle']
 
         if self.force_or_speed_control == 'force':
             # When speed limits are active during the optimization (see determine_new_steady_state method of Phase
             # class in qsm.py), the setpoint reel-out/reel-in forces are overruled. For special cases, the respective
-            # optimization variables won't affect the simulation. The lower constraints avoid random steps between
+            # optimization variables won't affect the simulation. The constraints below avoid random steps between
             # iterations and drives the variables towards an extremum value of the force during the respective phase.
             if res['min_tether_force']['out'] == np.inf:
                 res['min_tether_force']['out'] = 0.
@@ -515,7 +516,7 @@ class OptimizerCycle(Optimizer):
 
             # The maximum reel-out tether force can be exceeded when the tether force control is overruled by the maximum
             # reel-out speed limit and the imposed reel-out speed yields a tether force exceeding its set point. This
-            # scenario is prevented by the lower constraint.
+            # scenario is prevented by the constraint below.
             force_max_limit = self.system_properties.tether_force_max_limit
             max_force_violation_traction = res['max_tether_force']['out'] - force_max_limit
             ineq_cons_traction_max_force = -max_force_violation_traction/force_max_limit + 1e-6
@@ -535,8 +536,8 @@ class OptimizerCycle(Optimizer):
             speed_out_setpoint_max = -(res['max_reeling_speed']['out'] - x_real_scale[0]) + 1e-6
             speed_in_setpoint_min = (res['min_reeling_speed']['in'] - x_real_scale[1]) + 1e-6
 
-            # The maximum reel-out speed can be exceeded when the speed force control is overruled by the maximum
-            # reel-out speed limit and the imposed reel-out force yields a reel-out speed exceeding its set point. This
+            # The maximum reel-out speed can be exceeded when the speed control is overruled by the minimum
+            # reel-out force limit and the imposed reel-out force yields a reel-out speed exceeding its set point. This
             # scenario is prevented by the lower constraint.
             speed_max_limit = self.system_properties.reeling_speed_max_limit
             max_speed_violation_traction = res['max_reeling_speed']['out'] - speed_max_limit
