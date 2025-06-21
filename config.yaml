@@ -74,11 +74,11 @@ constraints:
 opt_variables:
   F_RO:
     enabled: true
-    init_value: 1.1e+04 # kgf     
+    init_value: 1.1078e+04 # N  
     unit: N
   F_RI:
     enabled: true
-    init_value: 2.9418e+03 # kgf
+    init_value: 2.9418e+03 # N
     unit: N
   average_elevation:
     enabled: true
@@ -91,10 +91,10 @@ opt_variables:
     init_value: 25. # deg
   minimum_tether_length:
     enabled: true
-    init_value: 195 # m
+    init_value: 215 # m
   tether_stroke:
     enabled: true 
-    init_value: 120 # m
+    init_value: 145 # m
 
 opt_settings:
   maxiter: 30
