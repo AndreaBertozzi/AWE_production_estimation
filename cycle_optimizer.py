@@ -356,7 +356,7 @@ class Optimizer:
 
 class OptimizerCycle(Optimizer):
     def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None,
-                  reduce_ineq_cons=None, parametric_cons_values = [1, 100], force_or_speed_control = 'force'): 
+                  reduce_ineq_cons=None, parametric_cons_values = [1, 100*np.pi/180], force_or_speed_control = 'force'): 
               
         self.force_or_speed_control = force_or_speed_control
         self.parametric_cons_values = parametric_cons_values
