@@ -92,7 +92,7 @@ def example_2():
     plt.show()
 
 def example_3():          
-    with open("config.yaml") as f:
+    with open("config/config.yaml") as f:
         config = yaml.safe_load(f)
 
     sys_props = parse_system_properties_and_bounds(config)

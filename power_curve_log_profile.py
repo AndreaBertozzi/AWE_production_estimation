@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from utils import *
-from parser_config import *
 from qsm import *
 from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor
@@ -228,7 +227,7 @@ def compare_kpis(power_curves):
         plt.ylabel('Average reel-out power [W]')
 
 if __name__ == "__main__":
-    pc = generate_power_curves_single_profile('config.yaml')
+    pc = generate_power_curves_single_profile('config/config.yaml')
     #pc = load_power_curve_single_profile_results_and_plot_trajectories('config.yaml')
     plt.show()
 

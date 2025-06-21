@@ -1,6 +1,6 @@
 output/
 results/
-config.yaml
+config/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
