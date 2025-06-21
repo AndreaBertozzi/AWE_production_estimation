@@ -13,7 +13,9 @@ def example_1():
     sys_props = SystemProperties(sys_props)
 
     env_state = LogProfile()
-    env_state.set_reference_wind_speed(10.)
+    env_state.set_reference_wind_speed(6.5)
+    env_state.set_reference_height(100)
+    env_state.set_roughness_length(0.07)
 
     cycle_sim_settings = {
         'cycle': {
@@ -33,8 +35,8 @@ def example_1():
     # In this case we are optimising: F_RO, F_RI, theta_avg, Lmax_RO - Lmin_RO, Lmin_RO
     _, init_vals = parse_opt_variables(config)
     cons_enabled_idx, cons_param_vals = parse_constraints(config)
-    
-    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
+
+    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 3, 4, 5, 6]),
                          reduce_ineq_cons=cons_enabled_idx, parametric_cons_values=cons_param_vals, force_or_speed_control='force')
     
     
@@ -75,7 +77,7 @@ def example_2():
     }
 
     cons_enabled_idx, cons_param_vals = parse_constraints(config)
-    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
+    oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2]),
                          reduce_ineq_cons=cons_enabled_idx, parametric_cons_values=cons_param_vals, force_or_speed_control='speed')
     
     oc.x0_real_scale = np.array([3, -7., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])

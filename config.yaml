@@ -6,11 +6,11 @@ kite:
   mass: 94                      # kg
   projected_area: 46.86         # m2
   drag_coefficient:
-    powered: 0.14
+    powered: 0.17
     depowered: 0.08
   lift_coefficient:
-    powered: 0.78
-    depowered: 0.33
+    powered: 0.91
+    depowered: 0.35
 
 # Tether properties
 tether:
@@ -74,27 +74,27 @@ constraints:
 opt_variables:
   F_RO:
     enabled: true
-    init_value: 2400 # kgf     
-    unit: kgf
+    init_value: 1.1e+04 # kgf     
+    unit: N
   F_RI:
     enabled: true
-    init_value: 350 # kgf
-    unit: kgf
+    init_value: 2.9418e+03 # kgf
+    unit: N
   average_elevation:
     enabled: true
-    init_value: 32.5 # deg
+    init_value: 30. # deg
   relative_elevation:
     enabled: false
-    init_value: 9 # deg
+    init_value: 9.5 # deg
   maximum_azimuth:    
     enabled: false
-    init_value: 32.5 # deg
+    init_value: 25. # deg
   minimum_tether_length:
     enabled: true
-    init_value: 100
+    init_value: 195 # m
   tether_stroke:
-    enabled: true # m
-    init_value: 200 # m
+    enabled: true 
+    init_value: 120 # m
 
 opt_settings:
   maxiter: 30
