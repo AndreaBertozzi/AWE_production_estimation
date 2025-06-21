@@ -148,8 +148,8 @@ def parse_opt_variables(config):
             "average_elevation",
             "relative_elevation",
             "maximum_azimuth",
+            "tether_stroke",
             "minimum_tether_length",
-            "tether_stroke"
         ]
     
     elif control_mode == 'speed':
@@ -159,8 +159,8 @@ def parse_opt_variables(config):
             "average_elevation",
             "relative_elevation",
             "maximum_azimuth",
+            "tether_stroke",
             "minimum_tether_length",
-            "tether_stroke"
         ]
     
     elif control_mode == 'hybrid':
@@ -170,8 +170,8 @@ def parse_opt_variables(config):
             "average_elevation",
             "relative_elevation",
             "maximum_azimuth",
+            "tether_stroke",
             "minimum_tether_length",
-            "tether_stroke"
         ]
 
     opt_vars = config.get("opt_variables", {})
@@ -197,7 +197,7 @@ def parse_opt_variables(config):
 
         elif var in angle_vars:
             # Convert degrees to radians
-            init_val = math.radians(init_val)
+            init_val = math.pi*init_val/180.
 
         # No conversion for length or unitless values
         init_values.append(init_val)
