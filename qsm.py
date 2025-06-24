@@ -191,7 +191,6 @@ class LogProfile(EnvAtmosphericPressure):
         plt.tight_layout()
 
 
-
 class NormalisedWindTable1D(EnvAtmosphericPressure):
     """Environment state class introducing a wind profile specified by a normalised wind speed look-up table. Inherits
     from `EnvAtmosphericPressure`.
