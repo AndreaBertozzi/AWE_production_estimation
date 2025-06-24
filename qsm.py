@@ -1332,9 +1332,6 @@ class Phase(TimeSeries):
         else:
             self.average_power = 0
 
-        # print("Energy for comparison: ", simple_integration([s.power_ground for s in self.steady_states][:-1], self.time[:-1]))
-        # print("{:.1f} seconds passed to reach, {:.0f}J energy produced.".format(self.timer-timer_start, self.energy))
-
     def calc_operational_properties(self):
         """Calculate the operational properties of the phase."""
         # Calculate time averages.
@@ -2315,8 +2312,6 @@ class Cycle(TimeSeries):
         trans.run_simulation(system_properties, env_trans, steady_state_config, timer_start)
         last_kinematics = trans.kinematics[-1]
         last_time = trans.time[-1]
-        # trans.average_power = 0
-        # trans.energy = 0
 
         # Third, run the traction phase.
         trac = self.traction_phase
