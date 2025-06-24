@@ -90,7 +90,7 @@ def example_2():
     env_state.set_reference_wind_speed(8.0)
 
     # Load system properties from config.yaml
-    with open("config.yaml") as f:
+    with open("config/config.yaml") as f:
         config = yaml.safe_load(f)
 
     sys_props = parse_system_properties_and_bounds(config)
@@ -115,8 +115,8 @@ def example_2():
                 'control': ('reeling_speed', 0.),
             },
             'traction': {
-                'control': ('reeling_speed', 0.8),
-                'pattern': {'rel_elevation_angle': 9*np.pi/180, 'azimuth_angle': 35*np.pi/180},
+                'control': ('reeling_speed', 1.2),
+                'pattern': {'rel_elevation_angle': 9.2*np.pi/180, 'azimuth_angle': 35*np.pi/180},
                 'time_step': .05,
             },
         }
