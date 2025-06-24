@@ -623,7 +623,9 @@ class OptimizerCycle(Optimizer):
             phase_switch_points = [cycle.transition_phase.time[0], cycle.traction_phase.time[0]]
             cycle.time_plot(('straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'), y_labels=labels,
                             plot_markers=phase_switch_points)
-            
+        course_angle = [k.course_angle for k in cycle.traction_phase.kinematics]
+        course_rate = np.gradient(course_angle, cycle.traction_phase.time[1]-cycle.traction_phase.time[0]) 
+        max_course_rate = np.max(np.abs(course_rate))
         tether_length = [k.straight_tether_length for k in cycle.kinematics]
         res = {
             'average_power': {
@@ -652,6 +654,7 @@ class OptimizerCycle(Optimizer):
             },
             'min_tether_length': min(tether_length),
             'max_tether_length': max(tether_length),
+            'max_course_rate': max_course_rate,
             
             'n_crosswind_patterns': getattr(cycle.traction_phase, 'n_crosswind_patterns', None),
             'min_height': min([cycle.traction_phase.kinematics[0].z, cycle.traction_phase.kinematics[-1].z]),
