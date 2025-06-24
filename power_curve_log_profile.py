@@ -69,7 +69,7 @@ def generate_power_curves_single_profile(config_filename):
         env.set_reference_height(ref_height)
         env.set_roughness_length(roughness_length)
     else:
-        ValueError('Only logarithmic profiles are supported at the moment!')
+        NotImplementedError('Only logarithmic profiles are supported at the moment!')
 
     # Optimizations are performed sequentially with increased wind speed. The solution of the previous optimization
     # is used to initialise the next. With trial and error the lower configuration, a reasonably robust approach is
