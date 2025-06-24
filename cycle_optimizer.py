@@ -624,7 +624,11 @@ class OptimizerCycle(Optimizer):
             cycle.time_plot(('straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'), y_labels=labels,
                             plot_markers=phase_switch_points)
         course_angle = [k.course_angle for k in cycle.traction_phase.kinematics]
-        course_rate = np.gradient(course_angle, cycle.traction_phase.time[1]-cycle.traction_phase.time[0]) 
+        if len(course_angle) > 1:
+            course_rate = np.gradient(course_angle, self.cycle_settings['traction']['time_step']) 
+        else:
+            course_rate = 0.0
+            
         max_course_rate = np.max(np.abs(course_rate))
         tether_length = [k.straight_tether_length for k in cycle.kinematics]
         res = {
