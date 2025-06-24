@@ -117,17 +117,18 @@ def example_3():
     oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = np.array([0, 1, 2, 5, 6]),
                          reduce_ineq_cons=np.array([0, 1, 2, 3, 4, 5, 6]), force_or_speed_control='hybrid')
     
-    oc.x0_real_scale = np.array([1.5, 3500., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
+    oc.x0_real_scale = np.array([3, 2900., 0.5235,  9*np.pi/180, 32.5*np.pi/180,  100, 200])
     x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3)
 
     print('Opt. solution: ', x_opt)
     cons, kpis = oc.eval_point(True, x_real_scale=x_opt)
+    
     print('Successful optimisation: ', oc.op_res['success'])        
     print('Constraints: ', cons) 
     plt.show()
 
 if __name__ == "__main__":
-    example_2()
+    example_3()
     
     # EXAMPLE OUTPUT FROM TEST:
     """

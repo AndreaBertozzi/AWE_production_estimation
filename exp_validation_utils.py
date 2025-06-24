@@ -540,7 +540,7 @@ def pack_results_sim(cycle, env_state):
     x_traj = list(x_traj)
     y_traj = list(y_traj)
     z_traj = list(z_traj)
-    tether_length = [s.straight_tether_length for s in cycle.traction_phase.kinematics]
+    tether_length = [kin.straight_tether_length for kin in cycle.traction_phase.kinematics]
     flight_phase_index = 1*np.ones_like(tether_length)
     # Assuming each list is a column
     data = [time_trac, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index]
@@ -588,7 +588,6 @@ def pack_results_sim(cycle, env_state):
     RIRO_sim_df = pd.DataFrame(list(zip(*data)),\
                                 columns=['time', 'ground_tether_reelout_speed', 'ground_tether_force',\
                                           'ground_tether_length', 'ground_mech_power', 'x_pos', 'y_pos', 'z_pos', 'flight_phase_index'])
-
 
     sim_cycle_dataframe = pd.concat([RO_sim_df, RI_sim_df, RIRO_sim_df], axis=0, ignore_index=True)
     sim_cycle_dataframe.reset_index(drop=True, inplace=True)
