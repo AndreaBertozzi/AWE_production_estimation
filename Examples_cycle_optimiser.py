@@ -43,7 +43,7 @@ def example_1():
     oc.x0_real_scale = init_vals
 
     # iprint > 1 is verbose
-    x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3)
+    x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3, eps=1e-4)
 
     print('Opt. solution: ', x_opt)
     ylabs = (r'$L_{tether}$ [m]', r'$v_{reeling out}$ [m/s]', r'$F_{tether}$ [N]', r'$P_{ground}$ [W]')

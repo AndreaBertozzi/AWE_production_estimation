@@ -8,7 +8,8 @@ from qsm import *
 from cycle_optimizer import OptimizerCycle
 from power_curve_constructor import PowerCurveConstructor
 
-def export_to_csv_single_profile(v, v_cut_out, p, x_opts, n_cwp):
+def export_to_csv_single_profile(v, v_cut_out, p, x_opts, n_cwp, opt_details):
+    
     df = {
         'v_100m [m/s]': v,
         'v/v_cut-out [-]': v/v_cut_out,
@@ -21,6 +22,7 @@ def export_to_csv_single_profile(v, v_cut_out, p, x_opts, n_cwp):
         'stroke_tether [m]': [x[5] for x in x_opts],
         'min_length_tether [m]': [x[6] for x in x_opts],
         'n_crosswind_patterns [-]': n_cwp,
+        'success [-]': [od['success'] for od in opt_details],
     }
     df = pd.DataFrame(df)
     df.to_csv('output/power_curve_log_profile.csv', index=False, sep=";")
@@ -96,7 +98,7 @@ def generate_power_curves_single_profile(config_filename):
     # of the new optimization is not the solution of the preceding optimization.
     op_seq = {
         15.: {'power_optimizer': op_cycle_pc, 'dx0': np.array([0., 0., 0., 0., 0., 0., 0.])},
-        np.inf: {'power_optimizer': op_cycle_pc, 'dx0': np.array([0., 0., 0.1, 0., 0., 0., 0.])}
+        np.inf: {'power_optimizer': op_cycle_pc, 'dx0': np.array([0., 0., 0., 0., 0., 0., 0.])}
         }
 
     # Start optimizations.
@@ -126,7 +128,7 @@ def generate_power_curves_single_profile(config_filename):
 
     n_cwp = [kpis['n_crosswind_patterns'] for kpis in pc.performance_indicators]
     
-    export_to_csv_single_profile(pc.wind_speeds, vw_cut_out, p_cycle, pc.x_opts, n_cwp)
+    export_to_csv_single_profile(pc.wind_speeds, vw_cut_out, p_cycle, pc.x_opts, n_cwp, pc.optimization_details)
 
     df = pd.DataFrame(limits_refined)
     print(df)

@@ -504,7 +504,7 @@ class OptimizerCycle(Optimizer):
         # Overflying ground station
         ineq_cons_max_elevation = self.parametric_cons_values[1] - res['max_elevation_angle']
 
-        ineq_cons_max_course_rate = -self.parametric_cons_values[2] + res['max_course_rate']
+        ineq_cons_max_course_rate = self.parametric_cons_values[2] - res['max_course_rate']
 
         if self.force_or_speed_control == 'force':
             # When speed limits are active during the optimization (see determine_new_steady_state method of Phase
@@ -630,7 +630,7 @@ class OptimizerCycle(Optimizer):
             course_rate = np.gradient(course_angle, self.cycle_settings['traction']['time_step']) 
         else:
             course_rate = 0.0
-            
+
         max_course_rate = np.max(np.abs(course_rate))
         tether_length = [k.straight_tether_length for k in cycle.kinematics]
         res = {
