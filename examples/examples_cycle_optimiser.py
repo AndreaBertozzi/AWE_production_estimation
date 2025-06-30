@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import yaml
+import os
+import sys
+
+sys.path.append(os.path.abspath('./'))
 from cycle_optimizer import OptimizerCycle
 from qsm import LogProfile, TractionPhasePattern, SystemProperties
 from utils import *
@@ -53,7 +57,6 @@ def example_1():
     plt.show()
 
 def example_2():
-    # TODO: Understand why this does not converge  
     with open("config/config.yaml") as f:
         config = yaml.safe_load(f)
 
@@ -92,7 +95,6 @@ def example_2():
     plt.show()
 
 def example_3():
-    # TODO: Understand why this does not converge          
     with open("config/config.yaml") as f:
         config = yaml.safe_load(f)
 
@@ -127,19 +129,34 @@ def example_3():
     print('Constraints: ', cons) 
     plt.show()
 
+def main():
+    # Mapping from option number to example function
+    example_funcs = {
+        "1": example_1,
+        "2": example_2,
+        "3": example_3,
+    }
+
+    print("Examples about the QSM model\n")
+    print("Select an example to run:")
+    for i in range(1, 4):
+        print(f"  {i}. example_{i}()")
+
+    choice = input("\nEnter the number of the example to run (1-3), or 'q' to quit: ").strip()
+
+    if choice.lower() == 'q':
+        print("Exiting.")
+        sys.exit(0)
+
+    if choice in example_funcs:
+        print(f"\nRunning example_{choice}()...\n")
+        try:
+            example_funcs[choice]()
+        except Exception as e:
+            print(f"An error occurred while running example_{choice}: {e}")
+    else:
+        print("Invalid choice. Please enter a number between 1 and 3.")
+
+# Optional: run main if script is called directly
 if __name__ == "__main__":
-    example_1()
-    
-    # EXAMPLE OUTPUT FROM TEST:
-    """
-    Optimization terminated successfully    (Exit mode 0)
-                Current function value: -0.7207391615666787
-                Iterations: 12
-                Function evaluations: 78
-                Gradient evaluations: 12
-    Opt. solution:  [2.28363626e+04 3.18573904e+03 5.23598776e-01 1.57079633e-01
-    5.67232007e-01 1.49998266e+02 2.48020651e+02]
-    Successful optimisation:  True
-    Constraints:  [9.99999964e-07 1.00000000e-06 1.53159082e-01 3.01644069e+00
-    2.10266713e+01 1.98108317e+00 5.57715138e-06]
-    """
+    main()

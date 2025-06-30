@@ -1,9 +1,12 @@
-from exp_validation_utils import *
-from qsm import *
-from utils import *
 import pickle
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import os
+import sys
+sys.path.append(os.path.abspath('./'))
+from exp_validation_utils import *
+from qsm import *
+from utils import *
 
 """
 This file provides a collection of `example_*` functions that load an experimental kite-power system cycle
@@ -185,7 +188,9 @@ def example_3():
     # See example 1 on how to get the example_exp_cycle
     with open('examples_data/experimental_cycle_example.pkl', "rb") as file: example_exp_cycle = pickle.load(file)
     exp_cycle_res_dict = pack_operational_parameters_and_results(example_exp_cycle)
-    sys_props = load_config('config.yaml')
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
     sim_cycle_dataframe, sim_cycle_res_dict = run_simulation_from_exp_dataframe(example_exp_cycle, sys_props, control='speed')
 
@@ -197,8 +202,15 @@ def example_4():
     # See example 1 on how to get the example_exp_cycle
     with open('examples_data/experimental_cycle_example.pkl', "rb") as file: example_exp_cycle = pickle.load(file)
     exp_cycle_res_dict = pack_operational_parameters_and_results(example_exp_cycle)
-    sys_props = load_config('config.yaml')
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)
+        
     sys_props = SystemProperties(sys_props)
+    
+    # Change drag coefficient
+    sys_props.kite_drag_coefficient_powered = 0.181
+    
     sim_cycle_dataframe, sim_cycle_res_dict = run_simulation_from_exp_dataframe(example_exp_cycle, sys_props, control='force')
 
     cycle_to_cycle_plot(sim_cycle_dataframe, example_exp_cycle, sim_cycle_res_dict, exp_cycle_res_dict)
@@ -209,7 +221,9 @@ def example_5():
     # See example 1 on how to get the example_exp_cycle
     with open('examples_data/experimental_cycle_example.pkl', "rb") as file: example_exp_cycle = pickle.load(file)
     exp_cycle_res_dict = pack_operational_parameters_and_results(example_exp_cycle)
-    sys_props = load_config('config.yaml')
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
     sim_cycle_dataframe, sim_cycle_res_dict = run_simulation_from_exp_dataframe(example_exp_cycle, sys_props, control='hybrid')
 
@@ -286,7 +300,9 @@ def example_7():
     # See example 1 on how to get the example_exp_cycle
     with open('examples_data/experimental_cycle_example.pkl', "rb") as file: example_exp_cycle = pickle.load(file)
     
-    sys_props = load_config('config.yaml')
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
     sim_cycle_dataframe, _ = run_simulation_from_exp_dataframe(example_exp_cycle, sys_props, control='force')
 
@@ -342,27 +358,12 @@ def example_7():
     plt.show()
 
 def example_8():
-    # Some other test names
-    #test_name = 'Test-2024-02-15_GS3/'
-    #test_name = 'Test-2024-02-16_GS3/'
-    #test_name = 'Test-2024-02-23_GS3/'
-    #test_name = 'Test-2024-02-27_GS3/'
-    #test_name = 'Test-2024-02-29_GS3/'
-    #test_name = 'Test-2024-03-01_GS3/'
-    #test_name = 'Test-2024-09-09_GS3/'
-
-    # Your path to experimental data
-    
-    data_path = 'C:/Users/andre/OneDrive - Delft University of Technology/Andrea_Kitepower/Experimental_data/2024/'
-    test_name = 'Test-2024-02-15_GS3/'
-    cycle_dataframe_list = load_process_protologger_file(data_path, test_name)
-
-    with open('examples_data/experimental_cycles_list_example.pkl', "wb") as file: pickle.dump(cycle_dataframe_list, file)
-    
     with open('examples_data/experimental_cycles_list_example.pkl', "rb") as file: cycle_dataframe_list = pickle.load(file)
 
     # --- Load kite system properties --- 
-    sys_props = load_config('config.yaml')    
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props) 
 
     _, all_cycle_res_sim, _, all_cycle_res_exp = \
@@ -405,7 +406,9 @@ def example_9():
     with open('examples_data/experimental_cycles_list_example.pkl', "rb") as file: cycle_dataframe_list = pickle.load(file)
 
     # --- Load kite system properties --- 
-    sys_props = load_config('config.yaml')    
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f) 
+    sys_props = parse_system_properties_and_bounds(config)      
     sys_props = SystemProperties(sys_props)   
     
     _, all_cycle_res_sim, _, all_cycle_res_exp = \
