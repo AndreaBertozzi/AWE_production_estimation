@@ -289,6 +289,7 @@ class PowerCurveConstructor:
 
 
 class WindSpeedLimitsEstimator:
+    # TODO: Understand why cut-out wind speed does not converge
     def __init__(self, sys_props):
         self.sys_props = sys_props
         self.l_min = 200
@@ -342,7 +343,6 @@ class WindSpeedLimitsEstimator:
 
             v += dv
    
-
     def calc_n_cw_patterns(self, env, traction_force, avg_elevation, rel_elevation, max_azimuth, l_min, l_max):
         """Calculate the number of cross-wind manoeuvres flown."""
         trac = TractionPhasePattern({
