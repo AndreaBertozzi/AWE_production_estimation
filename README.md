@@ -66,6 +66,14 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
     ```
 
 > 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6) if needed.
+
+### 📂 Create Output Folder
+
+Before running simulations or optimizations, please create an `output/` directory inside the project folder to store results and generated files:
+
+```bash
+mkdir output
+```
 ---
 
 ## Usage
@@ -104,3 +112,325 @@ Each module produces structured outputs:
 - **`cycle_optimizer.py`**: Returns optimized cycle parameters and performance summary
 - **`power_curve_constructor.py`**: Saves full power curve results to `.csv` and `.pickle` for analysis and plotting
 ---
+## Configuration File Reference
+
+All simulations and optimizations are controlled via a `config.yaml` file. Below is a structured reference of all configurable sections and parameters.
+
+---
+
+### 🔁 `environment`
+
+Defines the wind profile model used in simulations.
+
+```yaml
+environment:
+  profile: logarithmic            # Type of wind profile ('logarithmic', 'table1D', 'table2D')
+  roughness_length: 0.07          # Roughness length for log profile [m]
+  ref_height: 100                 # Reference height for wind speed [m]
+  ref_windspeeds: [8, 10, 12]     # Wind speeds at reference height [m/s]
+```
+
+---
+
+### 🪁 `kite`, `tether`, and `ground station`
+
+Defines physical properties of the AWE system components.
+
+```yaml
+kite:
+  mass: 94                        # Kite mass [kg]
+  projected_area: 46.86           # Projected area [m²]
+  drag_coefficient:
+    powered: 0.17
+    depowered: 0.08
+  lift_coefficient:
+    powered: 0.91
+    depowered: 0.35
+
+tether:
+  length: 360                     # Max tether length [m]
+  diameter: 0.014                 # Tether diameter [m]
+  density: 617.13                 # Tether density [kg/m³]
+  drag_coefficient: 1.1
+```
+
+---
+
+### 🛠️ `sim_settings`
+
+Sets simulation behavior and control method.
+
+```yaml
+sim_settings:
+  force_or_speed_control: 'force' # Control strategy: 'force', 'speed', or 'hybrid'
+  time_step_RO: 0.25              # Timestep during reel-out [s]
+  time_step_RI: 0.25              # Timestep during reel-in [s]
+  time_step_RIRO: 0.25            # Timestep during RIRO transition [s]
+```
+
+> ⚠️ Hybrid mode is experimental and not fully supported in all modules.
+
+---
+
+### 📏 `bounds`
+
+Defines constraints for optimization and physical feasibility.
+
+```yaml
+bounds:
+  avg_elevation:
+    min: 30.0
+    max: 60.0
+  max_azimuth:
+    min: 25.0
+    max: 50.0
+  relative_elevation:
+    min: 8.0
+    max: 12.0
+  force_limits:
+    min: 300                      # Minimum control force [kgf]
+    max: 2200
+  speed_limits:
+    min: 0.0
+    max: 9.8
+  tether_stroke:
+    min: 75
+    max: 150
+  minimum_tether_length:
+    min: 180
+    max: 240
+```
+
+---
+
+### 🚦 `constraints`
+
+Activates and parameterizes model constraints.
+
+```yaml
+constraints:
+  force_out_setpoint_min:
+    enabled: true
+  force_in_setpoint_max:
+    enabled: true
+  ineq_cons_traction_max_force:
+    enabled: true
+  ineq_cons_min_tether_length:
+    enabled: true
+  ineq_cons_max_tether_length:
+    enabled: true
+  ineq_cons_cw_patterns:
+    enabled: true
+    min_patterns: 1
+  ineq_cons_max_elevation:
+    enabled: true
+    max_elevation: 100
+  ineq_cons_max_course_rate:
+    enabled: true
+    max_course_rate: 1
+```
+
+---
+
+### 🧮 `opt_variables`
+
+Lists optimization variables, their initial values, and units.
+
+```yaml
+opt_variables:
+  F_RO:
+    enabled: true
+    init_value: 11078   # N
+    unit: N
+  F_RI:
+    enabled: true
+    init_value: 2941.8  # N
+    unit: N
+  average_elevation:
+    enabled: true
+    init_value: 30.0    # deg
+  relative_elevation:
+    enabled: false
+    init_value: 9.5     # deg
+  maximum_azimuth:
+    enabled: false
+    init_value: 25.0    # deg
+  minimum_tether_length:
+    enabled: true
+    init_value: 215     # m
+  tether_stroke:
+    enabled: true
+    init_value: 145     # m
+```
+
+> Units for force can be `N` or `kgf`. Angular values are given in degrees and internally converted to radians.
+
+---
+
+### ⚙️ `opt_settings`
+
+Configures the optimizer (currently uses SciPy SLSQP).
+
+```yaml
+opt_settings:
+  maxiter: 30            # Max optimization iterations
+  iprint: 2              # Verbosity level
+  ftol: 1e-3             # Function tolerance
+  eps: 1e-6              # Step size for numerical gradient
+```
+
+---
+## 🚀 Example: Cycle Optimization
+
+The following script demonstrates how to run a full cycle optimization using the `OptimizerCycle` class with a wind profile and parameters defined in a YAML configuration file.
+
+```python
+import yaml
+import numpy as np
+import matplotlib.pyplot as plt
+from cycle_optimizer import OptimizerCycle
+from qsm import LogProfile, TractionPhasePattern, SystemProperties
+from utils import *
+
+# --- Load configuration from YAML ---
+with open("config/config.yaml") as f:
+    config = yaml.safe_load(f)
+
+# --- System properties ---
+sys_props_dict = parse_system_properties_and_bounds(config)
+sys_props = SystemProperties(sys_props_dict)
+
+# --- Environment settings ---
+env_state = LogProfile()
+env_state.set_reference_wind_speed(6.5)     # [m/s]
+env_state.set_reference_height(100)         # [m]
+env_state.set_roughness_length(0.07)        # [m]
+
+# --- Simulation settings ---
+cycle_sim_settings = {
+    'cycle': {
+        'traction_phase': TractionPhasePattern,
+        'include_transition_energy': True,
+    },
+    'retraction': {'time_step': 0.5},
+    'transition': {'time_step': 0.5},
+    'traction': {'time_step': 0.25},
+}
+
+# --- Optimization variable and constraint selection ---
+opt_var_enabled_idx, init_vals = parse_opt_variables(config)
+cons_enabled_idx, cons_param_vals = parse_constraints(config)
+
+# --- Set up optimizer ---
+oc = OptimizerCycle(
+    cycle_sim_settings,
+    sys_props,
+    env_state,
+    reduce_x=opt_var_enabled_idx,
+    reduce_ineq_cons=cons_enabled_idx,
+    parametric_cons_values=cons_param_vals,
+    force_or_speed_control='force'
+)
+
+# Provide good initial guess to improve convergence
+oc.x0_real_scale = init_vals
+
+# --- Run optimization ---
+x_opt = oc.optimize(iprint=2, maxiter=30, ftol=1e-3, eps=1e-4)
+
+# --- Post-process results ---
+print('Optimal solution:', x_opt)
+ylabs = (
+    r'$L_{tether}$ [m]',
+    r'$v_{reeling~out}$ [m/s]',
+    r'$F_{tether}$ [N]',
+    r'$P_{ground}$ [W]'
+)
+constraints, kpis = oc.eval_point(plot_results=True, x_real_scale=x_opt, labels=ylabs)
+
+print('Successful optimization:', oc.op_res['success'])
+
+plt.show()
+```
+
+> ✅ **Note:** Make sure your working directory contains a valid `config/config.yaml` file, as described in the [Configuration File Reference](#configuration-file-reference).
+
+---
+
+## 🗂️ Project Structure
+
+The codebase is organized into modular components, each responsible for a specific stage of modeling, simulation, or analysis.
+
+```
+AWE-Production-Estimation/
+|
+├── examples/                      # Folder containing some examples
+├── examples_data/                 # Folder containing the input data for the examples
+├── wind_resource/                 # Folder containing wind profiles and relative occurrence
+├── config_template.yaml           # Template for the configuration file
+│
+├── cycle_optimizer.py             # Cycle optimization logic using QSM
+├── exp_validation_utils.py        # Experimental validation utilities and results packaging
+├── power_curve_constructor.py     # Class for power curve generation over multiple wind speeds
+├── qsm.py                         # Quasi-Steady Model implementation
+│
+├── power_curve_single_profile     # Script to calculate the power curve using a single wind profile, i.e. logarithmic
+│
+├── config/
+│   └── config.yaml                # Input configuration file (create directory manually,
+│                                    and create config.yaml according to template)
+├── output/                        # Folder to store simulation and optimization results (create manually)
+│
+├── requirements.txt               # Python dependencies
+├── README.md                      # Project documentation
+├── LICENSE                        # MIT license file
+└── ...
+```
+
+### Main Modules Overview
+
+- **`qsm.py`**  
+  Implements the core physical model using a quasi-steady formulation. Supports 1D/2D wind profiles and constraint enforcement.
+
+- **`exp_validation_utils.py`**  
+  Contains helper functions for validation and result processing.
+
+- **`cycle_optimizer.py`**  
+  Uses the QSM model to perform constrained optimization over a full operational cycle.
+
+- **`power_curve_constructor.py`**  
+  Automates the generation of power curves by running cycle optimizations over a range of wind speeds.
+
+---
+
+> ⚠️ **Important:** Please create the `output/` folder manually inside the project root before running simulations or optimizations. The power curves are saved in this directory.
+
+## 🚀 How to Run
+
+Once your environment is set up and the `output/` folder is created, you're ready to run simulations or optimizations.
+
+### 🧪 Example Scripts
+
+A set of example scripts is provided in the `examples/` folder. These demonstrate typical use cases such as:
+
+- Running a single quasi-steady simulation
+- Comparing quasi-steady simulation with experimental data
+- Performing a full cycle optimization
+
+To run any example:
+
+```bash
+python examples/your_example_script.py
+```
+
+---
+
+## 📄 License
+
+This project is released under the [MIT License](LICENSE).  
+You are free to use, modify, and distribute this software, provided that proper credit is given.
+
+---
+
+## 🙏 Acknowledgments
+If you use this software in a scientific publication, please consider citing it appropriately or linking back to this repository.
