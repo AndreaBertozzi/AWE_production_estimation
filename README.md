@@ -138,20 +138,20 @@ Defines physical properties of the AWE system components.
 
 ```yaml
 kite:
-  mass: 94                        # Kite mass [kg]
-  projected_area: 46.86           # Projected area [m²]
+  mass:                         # Kite mass [kg]
+  projected_area:          # Projected area [m²]
   drag_coefficient:
-    powered: 0.17
-    depowered: 0.08
+    powered:
+    depowered:
   lift_coefficient:
-    powered: 0.91
-    depowered: 0.35
+    powered: 
+    depowered: 
 
 tether:
-  length: 360                     # Max tether length [m]
-  diameter: 0.014                 # Tether diameter [m]
-  density: 617.13                 # Tether density [kg/m³]
-  drag_coefficient: 1.1
+  length:                    # Max tether length [m]
+  diameter:                  # Tether diameter [m]
+  density:                   # Tether density [kg/m³]
+  drag_coefficient:
 ```
 
 ---
@@ -163,9 +163,9 @@ Sets simulation behavior and control method.
 ```yaml
 sim_settings:
   force_or_speed_control: 'force' # Control strategy: 'force', 'speed', or 'hybrid'
-  time_step_RO: 0.25              # Timestep during reel-out [s]
-  time_step_RI: 0.25              # Timestep during reel-in [s]
-  time_step_RIRO: 0.25            # Timestep during RIRO transition [s]
+  time_step_RO:              # Timestep during reel-out [s]
+  time_step_RI:              # Timestep during reel-in [s]
+  time_step_RIRO:            # Timestep during RIRO transition [s]
 ```
 
 > ⚠️ Hybrid mode is experimental and not fully supported in all modules.
@@ -179,26 +179,26 @@ Defines constraints for optimization and physical feasibility.
 ```yaml
 bounds:
   avg_elevation:
-    min: 30.0
-    max: 60.0
+    min:
+    max:
   max_azimuth:
-    min: 25.0
-    max: 50.0
+    min:
+    max: 
   relative_elevation:
-    min: 8.0
-    max: 12.0
+    min: 
+    max: 
   force_limits:
-    min: 300                      # Minimum control force [kgf]
-    max: 2200
+    min:                      # Minimum control force [kgf]
+    max:
   speed_limits:
-    min: 0.0
-    max: 9.8
+    min:
+    max:
   tether_stroke:
-    min: 75
-    max: 150
+    min: 
+    max: 
   minimum_tether_length:
-    min: 180
-    max: 240
+    min: 
+    max: 
 ```
 
 ---
@@ -221,13 +221,13 @@ constraints:
     enabled: true
   ineq_cons_cw_patterns:
     enabled: true
-    min_patterns: 1
+    min_patterns: 
   ineq_cons_max_elevation:
     enabled: true
-    max_elevation: 100
+    max_elevation: 
   ineq_cons_max_course_rate:
     enabled: true
-    max_course_rate: 1
+    max_course_rate: 
 ```
 
 ---
@@ -240,27 +240,27 @@ Lists optimization variables, their initial values, and units.
 opt_variables:
   F_RO:
     enabled: true
-    init_value: 11078   # N
+    init_value:    # N
     unit: N
   F_RI:
     enabled: true
-    init_value: 2941.8  # N
+    init_value:   # N
     unit: N
   average_elevation:
     enabled: true
-    init_value: 30.0    # deg
+    init_value:   # deg
   relative_elevation:
     enabled: false
-    init_value: 9.5     # deg
+    init_value:     # deg
   maximum_azimuth:
     enabled: false
-    init_value: 25.0    # deg
+    init_value:     # deg
   minimum_tether_length:
     enabled: true
-    init_value: 215     # m
+    init_value:      # m
   tether_stroke:
     enabled: true
-    init_value: 145     # m
+    init_value:      # m
 ```
 
 > Units for force can be `N` or `kgf`. Angular values are given in degrees and internally converted to radians.
