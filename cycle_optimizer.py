@@ -457,17 +457,6 @@ class OptimizerCycle(Optimizer):
         super().__init__(self.x0_real_scale_default.copy(), bounds, self.scaling_x_default.copy(),
                         reduce_x, reduce_ineq_cons, system_properties, environment_state)
 
-        # Set cycle settings after printing the settings that may be overruled by the optimization.
-        cycle_settings.setdefault('cycle', {})
-        cycle_keys = list(flatten_dict(cycle_settings))
-        overruled_keys = []
-        for k in ['cycle.elevation_angle_traction', 'cycle.tether_length_start_retraction',
-                  'cycle.tether_length_end_retraction', 'retraction.control', 'transition.control',
-                    'traction.control', 'traction.pattern']:
-            if k in cycle_keys:
-                overruled_keys.append(k)
-        if overruled_keys:
-            print("Overruled cycle setting: " + ", ".join(overruled_keys) + ".")
         self.cycle_settings = cycle_settings
 
     def eval_fun(self, x, scale_x=True, **kwargs):
