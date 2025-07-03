@@ -57,8 +57,9 @@ class ElectricalPowerCurve:
         self.calculate()
 
     def smooth_opt_results(self):
-        self.dataframe = self.dataframe[self.dataframe['success [-]'] == self.only_successful_sims]
-        self.dataframe.reset_index(inplace = True)     
+        if self.only_successful_sims:
+            self.dataframe = self.dataframe[self.dataframe['success [-]'] == True]
+            self.dataframe.reset_index(inplace = True)     
         
         if self.fit_settings['end_index'] is not None:
             self.dataframe = self.dataframe.iloc[:self.fit_settings['end_index']]
