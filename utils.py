@@ -351,7 +351,7 @@ def parse_electrical_etas(config):
 def parse_power_curve_smoothing(config):
     pcs = config.get("power_curve_smoothing", {})
 
-    only_successful_sim = smooth = bool(pcs.get("only_successful_sims", True))
+    only_successful_sims = bool(pcs.get("only_successful_sims", True))
     smooth = bool(pcs.get("smooth", False))
     plot_results = bool(pcs.get("plot_results", False))
     end_index = pcs.get("end_index", None)
@@ -373,7 +373,7 @@ def parse_power_curve_smoothing(config):
         "end_index": end_index
     }
 
-    return only_successful_sim, smooth, plot_results, fit_settings
+    return only_successful_sims, smooth, plot_results, fit_settings
 
 
 def parse_trajectory_etas(config):
