@@ -17,8 +17,6 @@ class ElectricalPowerCurve:
     def __init__(self, output_file_path, config_file_path):
         if os.path.exists(output_file_path):
             self.dataframe = pd.read_csv(output_file_path, sep=';')
-            self.dataframe = self.dataframe[self.dataframe['success [-]'] == True]
-            self.dataframe.reset_index(inplace = True)     
         else:
             raise(FileNotFoundError('No mechanical power curve found! Use power_curve_single_profile.py to generate one first!'))
     
@@ -32,6 +30,9 @@ class ElectricalPowerCurve:
         el_eff = parse_electrical_etas(self.config)
         self.external_battery_connected = el_eff['external_battery']['connected']
 
+        eta_flight_trajectory = parse_trajectory_etas(self.config)
+        self.eta_flight_trajectory = eta_flight_trajectory
+
         self.self_cons_mot_control = el_eff['motor_controller']['self_consumption']
         self.eta_mot_control = el_eff['motor_controller']['efficiency']
 
@@ -43,11 +44,12 @@ class ElectricalPowerCurve:
             self.eta_ext_batt = el_eff['external_battery']['efficiency']
 
 
-        smooth, plot_results, fit_settings = parse_power_curve_smoothing(self.config)
+        only_successful_sims, smooth, plot_results, fit_settings = parse_power_curve_smoothing(self.config)
 
         if not smooth and plot_results:
             raise(UserWarning('Enable smoothing if you want to see smoothing results!'))
         
+        self.only_successful_sims = only_successful_sims
         self.smooth = smooth
         self.plot_smoothing_results = plot_results
         self.fit_settings = fit_settings
@@ -55,6 +57,9 @@ class ElectricalPowerCurve:
         self.calculate()
 
     def smooth_opt_results(self):
+        self.dataframe = self.dataframe[self.dataframe['success [-]'] == self.only_successful_sims]
+        self.dataframe.reset_index(inplace = True)     
+        
         if self.fit_settings['end_index'] is not None:
             self.dataframe = self.dataframe.iloc[:self.fit_settings['end_index']]
 
@@ -85,6 +90,8 @@ class ElectricalPowerCurve:
         stroke_tether_smooth = np.max(stroke_tether)*np.ones_like(stroke_tether)
 
         min_tether_length_smooth = np.max(min_tether_length)*np.ones_like(min_tether_length)
+
+
 
         self.dataframe['F_RO fit [N]'] = F_RO_smooth
         self.dataframe['F_RI fit [N]'] = F_RI_smooth
@@ -201,9 +208,9 @@ class ElectricalPowerCurve:
             self.smooth_opt_results()
             self.smooth_power_curve()
 
-            power_series = self.dataframe['P_cycle fit [W]']
+            power_series = self.eta_flight_trajectory*self.dataframe['P_cycle fit [W]']
         else:
-            power_series = self.dataframe['P_cycle [W]']
+            power_series = self.eta_flight_trajectory*self.dataframe['P_cycle [W]']
 
         self.dataframe['P_DC [W]'] = self.eta_mot_control*power_series - self.self_cons_mot_control
         self.dataframe['P_AC [W]'] = self.eta_DC_AC*self.dataframe['P_DC [W]'] - self.self_cons_DC_AC
@@ -216,10 +223,10 @@ class ElectricalPowerCurve:
         colors = ['#11ad3a', '#2373cd', '#f9b80d', '#c51f05']
         _, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 4), sharex=True)
         if self.smooth:
-            ax.plot(self.dataframe['v_100m [m/s]'], self.dataframe['P_cycle fit [W]'] * 1e-3, linewidth = 3,
+            ax.plot(self.dataframe['v_100m [m/s]'], self.eta_flight_trajectory*self.dataframe['P_cycle fit [W]'] * 1e-3, linewidth = 3,
                      c=colors[0], label= 'Mechanical power curve (fitted)')
         else:
-            ax.plot(self.dataframe['v_100m [m/s]'], self.dataframe['P_cycle [W]'] * 1e-3, linewidth = 3,
+            ax.plot(self.dataframe['v_100m [m/s]'], self.eta_flight_trajectory*self.dataframe['P_cycle [W]'] * 1e-3, linewidth = 3,
                      c=colors[0], label = 'Mechanical power curve (original)'), 
 
         ax.plot(self.dataframe['v_100m [m/s]'], self.dataframe['P_DC [W]'] * 1e-3, linewidth = 3,
@@ -257,8 +264,8 @@ class EnergyProductionEstimator:
         self.landing_max = 15 
 
         self.weekdays_to_exclude = ['Saturday', 'Sunday']
-        self.packing_energy = 10
-        self.average_packing_time = 1
+        self.packing_energy = 14
+        self.average_packing_time = 2
 
         self.maximum_azimuth = 45
         self.axis_no_fly_zone_deg = [20]
@@ -1053,19 +1060,29 @@ class EnergyProductionEstimator:
 
 wind_data = EnergyProductionEstimator('wind_resource/data_mobilis_sepfeb.grib', 'wind_resource/data_mobilis_sepfeb.pkl')
 
+#wind_data = EnergyProductionEstimator('wind_resource/data_dura_summer.grib', 'wind_resource/data_dura_summer.pkl')
+
+#wind_data.project = 'Dura'
+
 #wind_data.to_dataframe_from_grib()
 #wind_data.save_dataframe_to_pickle()
 wind_data.load_dataframe_from_pickle()
 
-pow_curve = ElectricalPowerCurve('output/power_curve_log_profile.csv', 'config/config.yaml')
+#wind_data.dataframe.to_csv('dura_data.csv')
+
+wind_data.start_month = 'September'
+wind_data.end_month = 'November'
+
+pow_curve = ElectricalPowerCurve('output/lower_cl_low/power_curve_log_profile.csv', 'config/config.yaml')
 
 wind_data.power_curve = pow_curve
 
+wind_data.packing_energy = 3
 
-wind_data.set_flight_windows(2, 5, 11, 16)
+wind_data.set_flight_windows(2, 6, 11, 18)
 wind_data.run_energy_pipeline()
 wind_data.calculate_average_weekly_production()
-wind_data.dataframe.to_csv('predictions.csv')
+#wind_data.dataframe.to_csv('predictions.csv')
 
 #wind_data.plot_figures(save_figs=False)
 #plt.show()
