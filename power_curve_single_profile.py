@@ -139,7 +139,9 @@ def generate_power_curves_single_profile(config_filename):
 
     return pc
 
-def load_power_curve_single_profile_results_and_plot_trajectories(config_filename):
+def load_power_curve_single_profile_results_and_plot_trajectories(config_filename,\
+             output_filename = 'output/power_curve_log_profile.pickle'):
+    
     """Plot trajectories from previously generated power curve."""
     with open(config_filename) as f:
         config = yaml.safe_load(f)
@@ -153,7 +155,7 @@ def load_power_curve_single_profile_results_and_plot_trajectories(config_filenam
     sys_props = SystemProperties(sys_props)
 
     pc = PowerCurveConstructor(None)
-    pc.import_results('output/power_curve_log_profile.pickle')
+    pc.import_results(output_filename)
     pc.plot_optimal_trajectories()
     plt.gcf().set_size_inches(5.5, 3.5)
     plt.subplots_adjust(top=0.99, bottom=0.1, left=0.12, right=0.65)
@@ -229,8 +231,8 @@ def compare_kpis(power_curves):
         plt.ylabel('Average reel-out power [W]')
 
 if __name__ == "__main__":
-    pc = generate_power_curves_single_profile('config/config.yaml')
-    #pc = load_power_curve_single_profile_results_and_plot_trajectories('config.yaml')
+    #pc = generate_power_curves_single_profile('config/config.yaml')
+    pc = load_power_curve_single_profile_results_and_plot_trajectories('config/config.yaml', 'output/lower_cl_low/power_curve_log_profile.pickle')
     plt.show()
 
 
