@@ -310,3 +310,66 @@ def parse_environment(config):
         raise ValueError("Environment values must be numeric.")
 
     return profile, roughness_length, ref_height, ref_windspeeds
+
+
+def parse_electrical_etas(config):
+    section = config.get("electrical_etas", {})
+    required_blocks = ["motor_controller", "DC_AC_converter", "external_battery"]
+
+    electrical_efficiency = {}
+
+    for block in required_blocks:
+        if block not in section:
+            raise ValueError(f"Missing electrical component: '{block}'")
+        
+        entry = section[block]
+
+        # Basic validation
+        if "self_consumption" not in entry or "efficiency" not in entry:
+            raise ValueError(f"Missing fields in '{block}' (need 'self_consumption' and 'efficiency')")
+
+        # Convert values
+        self_consumption = float(entry["self_consumption"])
+        efficiency = float(entry["efficiency"])
+
+        # External battery has an additional field
+        connected = entry.get("connected", True if block != "external_battery" else None)
+        if block == "external_battery":
+            if connected is None:
+                raise ValueError("'connected' field is required for 'external_battery'")
+            connected = bool(connected)
+
+        electrical_efficiency[block] = {
+            "self_consumption": self_consumption,
+            "efficiency": efficiency,
+        }
+        if block == "external_battery":
+            electrical_efficiency[block]["connected"] = connected
+
+    return electrical_efficiency
+
+def parse_power_curve_smoothing(config):
+    pcs = config.get("power_curve_smoothing", {})
+
+    smooth = bool(pcs.get("smooth", False))
+    plot_results = bool(pcs.get("plot_results", False))
+    end_index = pcs.get("end_index", None)
+
+    def extract_dict(subsection_name):
+        sub = pcs.get(subsection_name, {})
+        if not isinstance(sub, dict):
+            raise ValueError(f"'{subsection_name}' must be a dictionary")
+        return dict(sub)  # ensures we return a copy
+
+    fit_order = extract_dict("fit_order")
+    ineq_tols = extract_dict("ineq_tols")
+    index_offset = extract_dict("index_offset")
+    
+    fit_settings = {
+        "fit_order": fit_order,
+        "ineq_tols": ineq_tols,
+        "index_offset": index_offset,
+        "end_index": end_index
+    }
+
+    return smooth, plot_results, fit_settings
