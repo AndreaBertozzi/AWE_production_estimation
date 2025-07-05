@@ -65,14 +65,15 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
     pip install -r requirements.txt
     ```
 
-> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6).
+> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6). The installation of `pygrib` from pip when using `python=3.6` could give some error. Consider upgrading your `python` or install pygrib via conda.
 
-### 📂 Create Output Folder
+### 📂 Create Config and Output Folder
 
-Before running simulations or optimizations, please create an `output/` directory inside the project folder to store results and generated files:
+Before running simulations or optimizations, please create an `output/` directory inside the project folder to store results and generated files and a `config/` directory inside the project folder to store .yaml configuration files (see `config_template.yaml` for example):
 
 ```bash
 mkdir output
+mkdir config
 ```
 ---
 
@@ -86,10 +87,11 @@ The **AWE Production Estimation** software consists of several modular component
 - `exp_validation_utils.py`: Provides utilities for **experimental validation**, including packing and exporting simulation results.
 - `cycle_optimizer.py`: Contains the **Cycle Optimizer** to find optimal operational settings for given wind conditions.
 - `power_curve_constructor.py`: Builds full **power curves** across a range of wind speeds using repeated optimization.
+- `energy_estimator.py`: Leverages the optimal **power curve** to estimate the **productivity** of  AWE system. 
 
 ## Input Configuration
 
-All inputs are defined in a central `config.yaml` file, with the following sections:
+All inputs are defined in a single `config.yaml` file, with the following sections:
 
 - **environment**: Wind profile setup (e.g., logarithmic or tabulated)
 - **kite, tether, ground station**: Physical properties of the AWE system
@@ -98,6 +100,9 @@ All inputs are defined in a central `config.yaml` file, with the following secti
 - **constraints**: Inequality constraints used in the optimization routines
 - **opt_variables**: Variables to be optimized with their initial values
 - **opt_settings**: Optimizer configuration (e.g., max iterations, tolerance)
+- **power_curve_smoothing**: Settings for the power curve smoothing (e.g. polynomial approximation order)
+- **trajectory_etas**: Representing the efficiency linked to the variability of the trajectories
+- **electrical_etas**: Efficiencies and self-consumption of the electrical equipment in the ground station
 
 For a full list and example values, see the detailed configuration section below.
 
@@ -111,6 +116,7 @@ Each module produces structured outputs:
 - **`qsm.py`**: Access to detailed kinematics and steady-state values per phase
 - **`cycle_optimizer.py`**: Returns optimized cycle parameters and performance summary
 - **`power_curve_constructor.py`**: Saves full power curve results to `.csv` and `.pickle` for analysis and plotting
+- **`energy_estimator.py`**: Generates a number of plots showcasing daily, monthly, and yearly energy production and flight statistics
 ---
 ## Configuration File Reference
 
@@ -277,6 +283,12 @@ opt_settings:
   iprint: 2              # Verbosity level
   ftol: 1e-3             # Function tolerance
   eps: 1e-6              # Step size for numerical gradient
+```
+
+### 🪁 
+```yaml
+trajectory_etas:
+  efficiency: 
 ```
 
 ---
