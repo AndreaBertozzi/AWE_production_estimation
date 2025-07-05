@@ -43,13 +43,12 @@ class ElectricalPowerCurve:
             self.self_cons_ext_batt = el_eff['external_battery']['self_consumption']
             self.eta_ext_batt = el_eff['external_battery']['efficiency']
 
-
-        only_successful_sims, smooth, plot_results, fit_settings = parse_power_curve_smoothing(self.config)
+        only_successful_opts, smooth, plot_results, fit_settings = parse_power_curve_smoothing(self.config)
 
         if not smooth and plot_results:
             raise(UserWarning('Enable smoothing if you want to see smoothing results!'))
         
-        self.only_successful_sims = only_successful_sims
+        self.only_successful_opts = only_successful_opts
         self.smooth = smooth
         self.plot_smoothing_results = plot_results
         self.fit_settings = fit_settings
@@ -57,7 +56,7 @@ class ElectricalPowerCurve:
         self.calculate()
 
     def smooth_opt_results(self):
-        if self.only_successful_sims:
+        if self.only_successful_opts:
             self.dataframe = self.dataframe[self.dataframe['success [-]'] == True]
             self.dataframe.reset_index(inplace = True)     
         
@@ -274,40 +273,30 @@ class EnergyProductionEstimator:
         
     def to_dataframe_from_grib(self):
         grbs = pygrib.open(self.grib_filename)
-        data = []
-        for ii, msg in enumerate(grbs):
-            # Filter for 100 m wind components (U and V)
-            if "100 metre" in msg.name: #and msg.shortName in ["u", "v"]:
-                    # Extract the time components
-                    year = msg["year"]
-                    month = msg["month"]
-                    day = msg["day"]
-                    hour = msg["hour"]
-                    
-                    # Extract the wind value (assuming a single point)
-                    wind_value = msg.values
-
-                    # Add to the data list
-                    data.append({
-                        "year": year,
-                        "month": month,
-                        "day": day,
-                        "hour": hour,
-                        f"{msg.shortName}": wind_value
-                    })
-
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
-
-        # Pivot to get separate columns for u and v
-        df = df.pivot_table(index=["year", "month", "day", "hour"], 
-                            values=["100u", "100v"])
-
-        # Flatten the multi-index columns
-        df.columns = [col for col in df.columns]
-        df.reset_index(inplace=True)
         
-        self.dataframe = df
+        data_dict = {}  # {(year, month, day, hour): {"100u": val, "100v": val}}
+
+        for msg in grbs:
+            if "100 metre" not in msg.name:
+                continue
+            
+            short_name = msg.shortName
+            if short_name not in ["100u", "100v"]:
+                continue  # Only process relevant wind components
+
+            time_key = (msg["year"], msg["month"], msg["day"], msg["hour"])
+            if time_key not in data_dict:
+                data_dict[time_key] = {}
+            data_dict[time_key][short_name] = msg.values
+
+        # Convert dictionary to DataFrame
+        rows = [
+            {"year": k[0], "month": k[1], "day": k[2], "hour": k[3], **v}
+            for k, v in data_dict.items()
+        ]
+
+        df = pd.DataFrame(rows)
+        self.dataframe = df.sort_values(["year", "month", "day", "hour"]).reset_index(drop=True)
 
     def save_dataframe_to_pickle(self):
         self.dataframe.to_pickle(self.pkl_filename)         
@@ -1075,10 +1064,11 @@ wind_data.start_month = 'September'
 wind_data.end_month = 'November'
 
 pow_curve = ElectricalPowerCurve('output/lower_cl_low/power_curve_log_profile.csv', 'config/config.yaml')
+pow_curve.dataframe.to_csv('output/alpha_power_curve.csv')
 
 wind_data.power_curve = pow_curve
 
-wind_data.packing_energy = 3
+wind_data.packing_energy = 7
 
 wind_data.set_flight_windows(2, 6, 11, 18)
 wind_data.run_energy_pipeline()
