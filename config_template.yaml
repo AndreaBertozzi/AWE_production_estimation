@@ -111,24 +111,28 @@ opt_settings:
   ftol: 1e-3
   eps: 1e-6
 
+trajectory_etas:
+  efficiency: 
+
 # Electrical efficiencies
 electrical_etas:
   motor_controller:
-    self_consumption: # W
+    self_consumption:  # W
     efficiency: 
 
   DC_AC_converter:
-    self_consumption:  # W
+    self_consumption: # W
     efficiency: 
   
   external_battery:
     connected: false
-    self_consumption: 3000 # W
-    efficiency: 0.95
+    self_consumption: # W
+    efficiency: 
 
 power_curve_smoothing:
+  only_successful_opts: true
   smooth: true
-  plot_results: false
+  plot_results: true
   fit_order:
     F_RO: 2
     F_RI: 3
@@ -139,6 +143,6 @@ power_curve_smoothing:
   index_offset:
     F_RO: 0
     average_elevation: 4
-  end_index: -1
+  end_index:
 
     
