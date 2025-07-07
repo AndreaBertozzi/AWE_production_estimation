@@ -330,28 +330,38 @@ class EnergyProductionEstimator:
 
         df = self.dataframe.copy()
         year_list = sorted(df['year'].unique())
-        df['project_year'] = np.nan  # Initialize
+        df['project_year'] = np.nan
 
+        # Check that all required months are present
+        required_months = (
+            list(range(start_month_num, 13)) + list(range(1, end_month_num + 1))
+            if start_month_num > end_month_num
+            else list(range(start_month_num, end_month_num + 1))
+        )
+
+        dataset_months = sorted(df['month'].unique())
+
+        # Check that every required month exists in the dataset
+        missing_months = [m for m in required_months if m not in dataset_months]
+        if missing_months:
+            missing_month_names = [calendar.month_name[m] for m in missing_months]
+            raise ValueError(f"Dataset is missing required months for project period: {', '.join(missing_month_names)}")
+
+        # Project year assignment logic (unchanged)
         project_year = 1
-
         if start_month_num > end_month_num:
-            # Project year spans across two calendar years (e.g. Oct to Mar)
-            for i in range(len(year_list) - 1):  # Stop at second-to-last year
+            for i in range(len(year_list) - 1):
                 current_year = year_list[i]
                 next_year = year_list[i + 1]
 
-                # Include months from current year after start_month
                 mask_start = (df['year'] == current_year) & (df['month'] >= start_month_num)
                 df.loc[mask_start, 'project_year'] = project_year
 
-                # Include months from next year before or equal to end_month
                 mask_end = (df['year'] == next_year) & (df['month'] <= end_month_num)
                 df.loc[mask_end, 'project_year'] = project_year
 
                 project_year += 1
-
         else:
-            # Project year fits within a calendar year (e.g. Mar to Sep)
             for year in year_list:
                 mask = (
                     (df['year'] == year) &
@@ -362,10 +372,8 @@ class EnergyProductionEstimator:
                 if mask.any():
                     project_year += 1
 
-        # Drop rows not in any project year
         df = df.dropna(subset=['project_year']).copy()
         df['project_year'] = df['project_year'].astype(int)
-
         self.dataframe = df.reset_index(drop=True)
                 
     def uv_to_directionmodule(self):
