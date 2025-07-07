@@ -45,7 +45,7 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
 1. Create a conda environment inside the project directory:
 
     ```bash
-    conda create --prefix ./venv python=3.6.8
+    conda create --prefix ./venv python=3.8
     ```
 
 2. Activate the environment:
@@ -65,7 +65,7 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
     pip install -r requirements.txt
     ```
 
-> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6).
+> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6.8).
 
 ### 📂 Create Config and Output Folder
 
