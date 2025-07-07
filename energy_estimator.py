@@ -1,7 +1,7 @@
-import pygrib
 import os
 import pandas as pd
 import numpy as np
+import xarray as xr
 import matplotlib.pyplot as plt
 import calendar
 from matplotlib.ticker import FuncFormatter
@@ -278,33 +278,42 @@ class EnergyProductionEstimator:
 
         self.maximum_azimuth = 45
         self.axis_no_fly_zone_deg = [20]
-        self.ranges_no_fly_zone_deg = [160]      
-        
-    def to_dataframe_from_grib(self):
-        grbs = pygrib.open(self.grib_filename)
-        
-        data_dict = {}  # {(year, month, day, hour): {"100u": val, "100v": val}}
+        self.ranges_no_fly_zone_deg = [160]   
 
-        for msg in grbs:
-            if "100 metre" not in msg.name:
-                continue
-            
-            short_name = msg.shortName
-            if short_name not in ["100u", "100v"]:
-                continue  # Only process relevant wind components
+    def to_dataframe_from_grib(self):   
 
-            time_key = (msg["year"], msg["month"], msg["day"], msg["hour"])
-            if time_key not in data_dict:
-                data_dict[time_key] = {}
-            data_dict[time_key][short_name] = msg.values
+        # Open the GRIB file with cfgrib engine
+        ds = xr.open_dataset(self.grib_filename, engine='cfgrib', decode_timedelta=True)
 
-        # Convert dictionary to DataFrame
-        rows = [
-            {"year": k[0], "month": k[1], "day": k[2], "hour": k[3], **v}
-            for k, v in data_dict.items()
-        ]
+        # Assume variables are 'u100' and 'v100' or similar — adjust if different
+        # Extract only 100m wind components
+        wind_vars = [var for var in ds.data_vars if var in ['u100', 'v100', '100u', '100v']]
 
-        df = pd.DataFrame(rows)
+        if not wind_vars:
+            raise ValueError("No 100m wind variables found in dataset")
+
+        # Select just the wind variables
+        ds_wind = ds[wind_vars]
+
+        # Get time coordinate as pandas datetime index
+        time_index = pd.to_datetime(ds_wind['time'].values)
+
+        # Build a DataFrame from the data variables and time components
+        data = {
+            'year': time_index.year,
+            'month': time_index.month,
+            'day': time_index.day,
+            'hour': time_index.hour,
+        }
+
+        for var in wind_vars:
+            var_data = ds_wind[var].squeeze()
+            data[var] = var_data.values
+
+        # Convert to DataFrame
+        df = pd.DataFrame(data)
+
+        # Sort as in your original code
         self.dataframe = df.sort_values(["year", "month", "day", "hour"]).reset_index(drop=True)
 
     def save_dataframe_to_pickle(self):
@@ -1063,9 +1072,9 @@ wind_data = EnergyProductionEstimator('wind_resource/data_mobilis_sepfeb.grib', 
 
 #wind_data.project = 'Dura'
 
-#wind_data.to_dataframe_from_grib()
+wind_data.to_dataframe_from_grib()
 #wind_data.save_dataframe_to_pickle()
-wind_data.load_dataframe_from_pickle()
+#wind_data.load_dataframe_from_pickle()
 
 #wind_data.dataframe.to_csv('dura_data.csv')
 

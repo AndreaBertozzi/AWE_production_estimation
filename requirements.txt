@@ -3,4 +3,5 @@ scipy
 matplotlib
 pandas
 PyYAML
-pygrib
+cfgrib
+xarray
