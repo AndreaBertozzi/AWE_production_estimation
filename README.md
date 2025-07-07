@@ -294,6 +294,50 @@ trajectory_etas:
   efficiency: 
 ```
 
+### 🧮 `electrical_etas`
+
+Configures the efficiency and self consumption of the electrical components of the ground station and of an optionally external battery
+
+```yaml
+electrical_etas:
+  motor_controller:
+    self_consumption:  # W
+    efficiency: 
+
+  DC_AC_converter:
+    self_consumption:  # W
+    efficiency:
+  
+  external_battery:
+    connected: false
+    self_consumption:  # W
+    efficiency:
+```
+
+### ⚙️ `power_curve_smoothing`
+
+Configures the settings for the power curve smoothing and fitting.
+
+```yaml
+power_curve_smoothing:
+  only_successful_opts: true
+  smooth: true
+  plot_results: false
+  fit_order:
+    F_RO: 2
+    F_RI: 3
+    average_elevation: 2
+    min_tether_length: 3
+  ineq_tols:
+    F_RI: 100
+    average_elevation: 0.005  
+  index_offset:
+    F_RO: -1 
+    average_elevation: 4 
+    min_tether_length: 7
+  end_index:
+```
+
 ---
 ## 🚀 Example: Cycle Optimization
 
@@ -380,16 +424,16 @@ The codebase is organized into modular components, each responsible for a specif
 AWE-Production-Estimation/
 |
 ├── examples/                      # Folder containing some examples
-├── examples_data/                 # Folder containing the input data for the examples
-├── wind_resource/                 # Folder containing wind profiles and relative occurrence
+├── wind_resource/                 # Folder containing wind profiles and relative occurrence, and historical meteorological data
 ├── config_template.yaml           # Template for the configuration file
 │
 ├── cycle_optimizer.py             # Cycle optimization logic using QSM
+├── energy_estimator.py            # Estimate the productivity of the AWES based on experimental data 
 ├── exp_validation_utils.py        # Experimental validation utilities and results packaging
 ├── power_curve_constructor.py     # Class for power curve generation over multiple wind speeds
 ├── qsm.py                         # Quasi-Steady Model implementation
 │
-├── power_curve_single_profile     # Script to calculate the power curve using a single wind profile, i.e. logarithmic
+├── power_curve_single_profile     # Calculate the mechanical power curve using a single wind profile, i.e. logarithmic
 │
 ├── config/
 │   └── config.yaml                # Input configuration file (create directory manually,
@@ -405,7 +449,7 @@ AWE-Production-Estimation/
 ### Main Modules Overview
 
 - **`qsm.py`**  
-  Implements the core physical model using a quasi-steady formulation. Supports 1D/2D wind profiles and constraint enforcement.
+  Implements the core physical model using a quasi-steady formulation.
 
 - **`exp_validation_utils.py`**  
   Contains helper functions for validation and result processing.
@@ -416,6 +460,8 @@ AWE-Production-Estimation/
 - **`power_curve_constructor.py`**  
   Automates the generation of power curves by running cycle optimizations over a range of wind speeds.
 
+- **`energy_estimator.py`**  
+  Defines electrical power curves based on electrical efficiencies and estimates the productivity of the AWES based on historical data.
 ---
 
 > ⚠️ **Important:** Please create the `output/` folder manually inside the project root before running simulations or optimizations. The power curves are saved in this directory.
@@ -429,7 +475,6 @@ Once your environment is set up and the `output/` folder is created, you're read
 A set of example scripts is provided in the `examples/` folder. These demonstrate typical use cases such as:
 
 - Running a single quasi-steady simulation
-- Comparing quasi-steady simulation with experimental data
 - Performing a full cycle optimization
 
 To run any example:
