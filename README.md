@@ -285,7 +285,10 @@ opt_settings:
   eps: 1e-6              # Step size for numerical gradient
 ```
 
-### 🪁 
+### 🪁 `trajectory_etas`
+
+Represents the efficiency with which the control system tracks and meets the power curve target throughout operation.
+
 ```yaml
 trajectory_etas:
   efficiency: 
