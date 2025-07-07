@@ -89,7 +89,8 @@ class ElectricalPowerCurve:
       
         idx = np.argmin(min_tether_length) + self.fit_settings['index_offset']['min_tether_length']
         min_tether_length_quad = np.polyval(np.polyfit(v_w[idx:], min_tether_length[idx:], self.fit_settings['fit_order']['min_tether_length']), v_w[idx:])
-        min_tether_length_smooth = np.hstack((min_tether_length[:idx], min_tether_length_quad))
+        min_tether_length_cons = np.min(min_tether_length)*np.ones_like(min_tether_length[:idx])
+        min_tether_length_smooth = np.hstack((min_tether_length_cons, min_tether_length_quad))
 
         total_tether_length = parse_system_properties_and_bounds(self.config)['total_tether_length']
         stroke_tether_smooth = total_tether_length - min_tether_length_smooth
@@ -1075,46 +1076,28 @@ class EnergyProductionEstimator:
 
 
 wind_data = EnergyProductionEstimator('wind_resource/data_mobilis_sepfeb.grib', 'wind_resource/data_mobilis_sepfeb.pkl')
-
-#wind_data = EnergyProductionEstimator('wind_resource/data_dura_summer.grib', 'wind_resource/data_dura_summer.pkl')
-
-#wind_data.project = 'Dura'
-
-wind_data.to_dataframe_from_grib()
+#wind_data.to_dataframe_from_grib()
 #wind_data.save_dataframe_to_pickle()
-#wind_data.load_dataframe_from_pickle()
-
-#wind_data.dataframe.to_csv('dura_data.csv')
+wind_data.load_dataframe_from_pickle()
 
 wind_data.start_month = 'September'
 wind_data.end_month = 'November'
 
-pow_curve = ElectricalPowerCurve('output/lower_cl_low/power_curve_log_profile.csv', 'config/config.yaml')
+pow_curve = ElectricalPowerCurve('Mobilis/baseline/power_curve_log_profile.csv', 'Mobilis/baseline/config.yaml')
 
-#pow_curve.plot_power_curves()
+pow_curve.plot_power_curves()
 
 plt.show()
 #pow_curve.dataframe.to_csv('output/alpha_power_curve.csv')
 
-#wind_data.power_curve = pow_curve
+wind_data.power_curve = pow_curve
 
-#wind_data.packing_energy = 7
+wind_data.packing_energy = 7
 
-#wind_data.set_flight_windows(2, 6, 11, 18)
-#wind_data.run_energy_pipeline()
-#wind_data.calculate_average_weekly_production()
+wind_data.set_flight_windows(2, 6, 11, 18)
+wind_data.run_energy_pipeline()
+wind_data.calculate_average_weekly_production()
 #wind_data.dataframe.to_csv('predictions.csv')
 
 #wind_data.plot_figures(save_figs=False)
 #plt.show()
-
-"""
-
-pc = ElectricalPowerCurve('output/power_curve_log_profile.csv', 'config/config.yaml')
-
-#pc.smooth_opt_results(last_idx = -2, plot_results=True)
-#pc.smooth_power_curve(plot_results=True)
-
-pc.calculate()
-#pc.plot_power_curves()
-"""
