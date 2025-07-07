@@ -1,4 +1,10 @@
-ouptut/
+output/
+results/
+config/
+examples_data/
+wind_resource/
+
+further_works/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -104,7 +110,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env*
 .venv
 env/
 venv/
