@@ -1,0 +1,150 @@
+# CONFIGURATION FILE FOR cycle_optimizer.py - power_curves.py 
+# Reported values correspond to the current state of kitepower system June 2025
+
+# Kite mass, area, and aerodynamic properties
+kite:
+  mass:                       # kg
+  projected_area:             # m2
+  drag_coefficient:
+    powered: 
+    depowered: 
+  lift_coefficient:
+    powered: 
+    depowered: 
+
+# Tether properties
+tether:
+  length:                       # m
+  diameter:                     # m
+  density:                      # kg/m3
+  drag_coefficient: 1.1         # -
+
+# Environment 
+environment:
+  profile: logarithmic
+  roughness_length: 0.07
+  ref_height: 100
+  ref_windspeeds: [8, 10, 12]
+
+sim_settings:
+  force_or_speed_control: 'force'
+  time_step_RO: 0.25
+  time_step_RI: 0.25
+  time_step_RIRO: 0.25
+
+# Bounds to the optimisation
+bounds:
+  avg_elevation: # Average elevation angle during reel out [deg]
+    min:                 
+    max:                   
+  max_azimuth:  # Maximum azimuth angle during reel out (max flight cone width) [deg]
+    min:                    
+    max:                    
+  relative_elevation: # Maximum elevation relative to the average elevation (max flight cone height) [deg]
+    min:                    
+    max:                    
+  force_limits: # Minimum force to have control on the kite [kgf] 
+    min:                    
+    max:                    
+  speed_limits: # Should be both positive, so the full range is [-max, -min] U [min, max] [m/s]
+    min:                    
+    max:                     
+  tether_stroke: # Reel out distance [m]
+    min:                     
+    max:                  
+  minimum_tether_length: # Tether length at start of reel-out [m]
+    min:                    
+    max:                    
+
+constraints:
+  # Default constraints
+  force_out_setpoint_min: 
+    enabled: true
+  force_in_setpoint_max:
+    enabled: true
+  ineq_cons_traction_max_force:
+    enabled: true
+  ineq_cons_min_tether_length:
+    enabled: true
+  ineq_cons_max_tether_length :
+    enabled: true
+
+  # Parametric constraints
+  ineq_cons_cw_patterns:
+    enabled: true
+    min_patterns: 1 # Minimum number of crosswind patterns [-]
+  ineq_cons_max_elevation:  
+    enabled: true
+    max_elevation: 100 # Maximum elevation angle [deg]
+  ineq_cons_max_course_rate:
+    enabled: true
+    max_course_rate: # Maximum course rate [rad/s]
+ 
+opt_variables:
+  F_RO: # Average force during reel-out [N or kgf]. Declare unit in correspoding field.
+    enabled: true
+    init_value:
+    unit: N
+  F_RI: # Average force during reel-in [N or kgf]. Declare unit in correspoding field.
+    enabled: true
+    init_value:
+    unit: N
+  average_elevation: # Average elevation angle during reel-out [deg]. 
+    enabled: true
+    init_value:
+  relative_elevation: # Relative elevation angle during reel-out [deg]. 
+    enabled: true
+    init_value:
+  maximum_azimuth: # Maximum azimuth angle during reel-out [deg].    
+    enabled: true
+    init_value:
+  minimum_tether_length: # Tether length at start of reel-out [m]
+    enabled: true
+    init_value:
+  tether_stroke: # Reel out distance [m]
+    enabled: true 
+    init_value:
+
+opt_settings:
+  maxiter: 30
+  iprint: 2 
+  ftol: 1e-3
+  eps: 1e-6
+
+trajectory_etas:
+  efficiency: 
+
+# Electrical efficiencies
+electrical_etas:
+  motor_controller:
+    self_consumption:  # W
+    efficiency: 
+
+  DC_AC_converter:
+    self_consumption: # W
+    efficiency: 
+  
+  external_battery:
+    connected: false
+    self_consumption: # W
+    efficiency: 
+
+power_curve_smoothing:
+  only_successful_opts: true
+  smooth: true
+  plot_results: true
+  fit_order:
+    F_RO: 2
+    F_RI: 5 #3
+    average_elevation: 2
+    min_tether_length: 5
+  ineq_tols:
+    F_RI: 100
+    average_elevation: 0.005  
+  index_offset:
+    F_RO: -1 #0
+    average_elevation: 3 #4
+    min_tether_length: -8
+  end_index:
+    
+    
