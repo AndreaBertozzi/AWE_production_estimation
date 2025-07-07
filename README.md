@@ -65,7 +65,7 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
     pip install -r requirements.txt
     ```
 
-> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6). The installation of `pygrib` from pip when using `python=3.6` could give some error. Consider upgrading your `python` or install pygrib via conda.
+> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6).
 
 ### 📂 Create Config and Output Folder
 
@@ -106,7 +106,7 @@ All inputs are defined in a single `config.yaml` file, with the following sectio
 
 For a full list and example values, see the detailed configuration section below.
 
-> ⚠️ **Note:** Currently, full `config.yaml` support is implemented for force-controlled simulations only. Hybrid control modes may cause convergence issues in the `cycle_optimizer` and `power_curve_constructor` modules.
+> ⚠️ **Note:** Currently, full `config.yaml` support is implemented for force-controlled simulations only. Speed and speed+force control modes may cause convergence issues in the `cycle_optimizer.py` and `power_curve_constructor.py` modules.
 ---
 
 ## Output
@@ -138,7 +138,7 @@ environment:
 
 ---
 
-### 🪁 `kite`, `tether`, and `ground station`
+### 🪁 `kite` and `tether`
 
 Defines physical properties of the AWE system components.
 
@@ -174,7 +174,7 @@ sim_settings:
   time_step_RIRO:            # Timestep during RIRO transition [s]
 ```
 
-> ⚠️ Hybrid mode is experimental and not fully supported in all modules.
+> ⚠️ Speed and hybrid (speed during reel-out and force during reel-in) modes are experimental and not fully supported in all modules.
 
 ---
 
@@ -194,7 +194,7 @@ bounds:
     min: 
     max: 
   force_limits:
-    min:                      # Minimum control force [kgf]
+    min:                   
     max:
   speed_limits:
     min:
