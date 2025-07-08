@@ -1,6 +1,6 @@
 # AWE Production Estimation
 
-**AWE Production Estimation** is a tool for estimating production output and performance of ground generation, flexible wing **Airborne Wind Energy (AWE)** systems. It provides a framework to evaluate and forecast the energy yield of AWE technologies based on configurable parameters and input data.
+**AWE Production Estimation** is a tool for estimating production output and performance of flexible wing, ground generation **Airborne Wind Energy (AWE)** systems. It provides a framework to evaluate and forecast the energy yield of the AWES based on experimental data.
 
 ## Installation
 
