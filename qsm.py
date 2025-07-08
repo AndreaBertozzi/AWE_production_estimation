@@ -1912,9 +1912,9 @@ class TractionPhaseHybrid(TractionPhase):
 class LissajousPattern():
     def __init__(self, settings):
         # Lissajous curve properties for figure 8.
-        self.elevation_max = settings['rel_elevation_angle']#4 * np.pi / 180  # [rad] sets max (relative) elevation angle: positive value -> flying up
+        self.elevation_max = settings['rel_elevation_angle'] # [rad] sets max (relative) elevation angle: positive value -> flying up
         # at edges
-        self.azimuth_max = settings['azimuth_angle']#15 * np.pi / 180  # [rad] sets max azimuth angle
+        self.azimuth_max = settings['azimuth_angle'] # [rad] sets max azimuth angle
 
         # Calculated property.
         self.curve_length_unit_sphere = self.calc_curve_length_unit_sphere()
