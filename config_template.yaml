@@ -79,6 +79,10 @@ constraints:
   ineq_cons_max_course_rate:
     enabled: true
     max_course_rate: # Maximum course rate [rad/s]
+  ineq_cons_min_height:
+    enabled: true
+    min_height: # Minimum ground clearance [m]
+
  
 opt_variables:
   F_RO: # Average force during reel-out [N or kgf]. Declare unit in correspoding field.

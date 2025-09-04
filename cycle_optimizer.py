@@ -495,6 +495,8 @@ class OptimizerCycle(Optimizer):
 
         ineq_cons_max_course_rate = self.parametric_cons_values[2] - res['max_course_rate']
 
+        ineq_cons_min_height =  - self.parametric_cons_values[3] + res['min_height'] 
+
         if self.force_or_speed_control == 'force':
             # When speed limits are active during the optimization (see determine_new_steady_state method of Phase
             # class in qsm.py), the setpoint reel-out/reel-in forces are overruled. For special cases, the respective
@@ -514,7 +516,7 @@ class OptimizerCycle(Optimizer):
 
             ineq_cons = np.array([force_out_setpoint_min, force_in_setpoint_max, ineq_cons_traction_max_force,
                                   ineq_cons_cw_patterns, ineq_cons_min_tether_length, ineq_cons_max_tether_length,
-                                    ineq_cons_max_elevation, ineq_cons_max_course_rate])        
+                                    ineq_cons_max_elevation, ineq_cons_max_course_rate, ineq_cons_min_height])        
                     
         elif self.force_or_speed_control == 'speed':
             # When force limits are active during the optimization (see determine_new_steady_state method of Phase
@@ -536,7 +538,7 @@ class OptimizerCycle(Optimizer):
             
             ineq_cons = np.array([speed_out_setpoint_max, speed_in_setpoint_min, ineq_cons_traction_max_speed,
                                   ineq_cons_cw_patterns, ineq_cons_min_tether_length, ineq_cons_max_tether_length,
-                                    ineq_cons_max_elevation, ineq_cons_max_course_rate])
+                                    ineq_cons_max_elevation, ineq_cons_max_course_rate, ineq_cons_min_height])
         
         elif self.force_or_speed_control == 'hybrid':
             # When force limits are active during the optimization (see determine_new_steady_state method of Phase
@@ -558,7 +560,7 @@ class OptimizerCycle(Optimizer):
             
             ineq_cons = np.array([speed_out_setpoint_max, force_in_setpoint_max, ineq_cons_traction_max_speed,
                                   ineq_cons_cw_patterns, ineq_cons_min_tether_length, ineq_cons_max_tether_length,
-                                    ineq_cons_max_elevation, ineq_cons_max_course_rate])
+                                    ineq_cons_max_elevation, ineq_cons_max_course_rate, ineq_cons_min_height])
 
         return obj, ineq_cons
 
