@@ -221,6 +221,7 @@ def parse_constraints(config):
         "ineq_cons_max_tether_length",        
         "ineq_cons_max_elevation",
         "ineq_cons_max_course_rate",
+        "ineq_cons_min_height"
     ]
 
     # Parametric constraints and the value key to extract
@@ -228,6 +229,7 @@ def parse_constraints(config):
         "ineq_cons_cw_patterns": "min_patterns",
         "ineq_cons_max_elevation": "max_elevation",
         "ineq_cons_max_course_rate": "max_course_rate",
+        "ineq_cons_min_height": "min_height",
     }
 
     enabled_flags = []
