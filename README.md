@@ -1,6 +1,6 @@
 # AWE Production Estimation
 
-**AWE Production Estimation** is a tool for estimating production output and performance of ground generation, flexible wing **Airborne Wind Energy (AWE)** systems. It provides a framework to evaluate and forecast the energy yield of AWE technologies based on configurable parameters and input data.
+**AWE Production Estimation** is a tool for estimating production output and performance of flexible wing, ground generation **Airborne Wind Energy (AWE)** systems. It provides a framework to evaluate and forecast the energy yield of the AWES based on experimental data.
 
 ## Installation
 
@@ -45,7 +45,7 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
 1. Create a conda environment inside the project directory:
 
     ```bash
-    conda create --prefix ./venv python=3.6.8
+    conda create --prefix ./venv python=3.8
     ```
 
 2. Activate the environment:
@@ -65,14 +65,15 @@ Ensure you have **conda** installed (Anaconda or Miniconda).
     pip install -r requirements.txt
     ```
 
-> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6).
+> 📝 **Note**: Replace `python=3.8` in the conda command with your desired version (must be >= 3.6.8).
 
-### 📂 Create Output Folder
+### 📂 Create Config and Output Folder
 
-Before running simulations or optimizations, please create an `output/` directory inside the project folder to store results and generated files:
+Before running simulations or optimizations, please create an `output/` directory inside the project folder to store results and generated files and a `config/` directory inside the project folder to store .yaml configuration files (see `config_template.yaml` for example):
 
 ```bash
 mkdir output
+mkdir config
 ```
 ---
 
@@ -86,10 +87,11 @@ The **AWE Production Estimation** software consists of several modular component
 - `exp_validation_utils.py`: Provides utilities for **experimental validation**, including packing and exporting simulation results.
 - `cycle_optimizer.py`: Contains the **Cycle Optimizer** to find optimal operational settings for given wind conditions.
 - `power_curve_constructor.py`: Builds full **power curves** across a range of wind speeds using repeated optimization.
+- `energy_estimator.py`: Leverages the optimal **power curve** to estimate the **productivity** of  AWE system. 
 
 ## Input Configuration
 
-All inputs are defined in a central `config.yaml` file, with the following sections:
+All inputs are defined in a single `config.yaml` file, with the following sections:
 
 - **environment**: Wind profile setup (e.g., logarithmic or tabulated)
 - **kite, tether, ground station**: Physical properties of the AWE system
@@ -98,10 +100,13 @@ All inputs are defined in a central `config.yaml` file, with the following secti
 - **constraints**: Inequality constraints used in the optimization routines
 - **opt_variables**: Variables to be optimized with their initial values
 - **opt_settings**: Optimizer configuration (e.g., max iterations, tolerance)
+- **power_curve_smoothing**: Settings for the power curve smoothing (e.g. polynomial approximation order)
+- **trajectory_etas**: Representing the efficiency linked to the variability of the trajectories
+- **electrical_etas**: Efficiencies and self-consumption of the electrical equipment in the ground station
 
 For a full list and example values, see the detailed configuration section below.
 
-> ⚠️ **Note:** Currently, full `config.yaml` support is implemented for force-controlled simulations only. Hybrid control modes may cause convergence issues in the `cycle_optimizer` and `power_curve_constructor` modules.
+> ⚠️ **Note:** Currently, full `config.yaml` support is implemented for force-controlled simulations only. Speed and speed+force control modes may cause convergence issues in the `cycle_optimizer.py` and `power_curve_constructor.py` modules.
 ---
 
 ## Output
@@ -111,6 +116,7 @@ Each module produces structured outputs:
 - **`qsm.py`**: Access to detailed kinematics and steady-state values per phase
 - **`cycle_optimizer.py`**: Returns optimized cycle parameters and performance summary
 - **`power_curve_constructor.py`**: Saves full power curve results to `.csv` and `.pickle` for analysis and plotting
+- **`energy_estimator.py`**: Generates a number of plots showcasing daily, monthly, and yearly energy production and flight statistics
 ---
 ## Configuration File Reference
 
@@ -132,7 +138,7 @@ environment:
 
 ---
 
-### 🪁 `kite`, `tether`, and `ground station`
+### 🪁 `kite` and `tether`
 
 Defines physical properties of the AWE system components.
 
@@ -168,7 +174,7 @@ sim_settings:
   time_step_RIRO:            # Timestep during RIRO transition [s]
 ```
 
-> ⚠️ Hybrid mode is experimental and not fully supported in all modules.
+> ⚠️ Speed and hybrid (speed during reel-out and force during reel-in) modes are experimental and not fully supported in all modules.
 
 ---
 
@@ -188,7 +194,7 @@ bounds:
     min: 
     max: 
   force_limits:
-    min:                      # Minimum control force [kgf]
+    min:                   
     max:
   speed_limits:
     min:
@@ -279,6 +285,59 @@ opt_settings:
   eps: 1e-6              # Step size for numerical gradient
 ```
 
+### 🪁 `trajectory_etas`
+
+Represents the efficiency with which the control system tracks and meets the power curve target throughout operation.
+
+```yaml
+trajectory_etas:
+  efficiency: 
+```
+
+### 🧮 `electrical_etas`
+
+Configures the efficiency and self consumption of the electrical components of the ground station and of an optionally external battery
+
+```yaml
+electrical_etas:
+  motor_controller:
+    self_consumption:  # W
+    efficiency: 
+
+  DC_AC_converter:
+    self_consumption:  # W
+    efficiency:
+  
+  external_battery:
+    connected: false
+    self_consumption:  # W
+    efficiency:
+```
+
+### ⚙️ `power_curve_smoothing`
+
+Configures the settings for the power curve smoothing and fitting.
+
+```yaml
+power_curve_smoothing:
+  only_successful_opts: true
+  smooth: true
+  plot_results: false
+  fit_order:
+    F_RO: 2
+    F_RI: 3
+    average_elevation: 2
+    min_tether_length: 3
+  ineq_tols:
+    F_RI: 100
+    average_elevation: 0.005  
+  index_offset:
+    F_RO: -1 
+    average_elevation: 4 
+    min_tether_length: 7
+  end_index:
+```
+
 ---
 ## 🚀 Example: Cycle Optimization
 
@@ -365,16 +424,16 @@ The codebase is organized into modular components, each responsible for a specif
 AWE-Production-Estimation/
 |
 ├── examples/                      # Folder containing some examples
-├── examples_data/                 # Folder containing the input data for the examples
-├── wind_resource/                 # Folder containing wind profiles and relative occurrence
+├── wind_resource/                 # Folder containing wind profiles and relative occurrence, and historical meteorological data
 ├── config_template.yaml           # Template for the configuration file
 │
 ├── cycle_optimizer.py             # Cycle optimization logic using QSM
+├── energy_estimator.py            # Estimate the productivity of the AWES based on experimental data 
 ├── exp_validation_utils.py        # Experimental validation utilities and results packaging
 ├── power_curve_constructor.py     # Class for power curve generation over multiple wind speeds
 ├── qsm.py                         # Quasi-Steady Model implementation
 │
-├── power_curve_single_profile     # Script to calculate the power curve using a single wind profile, i.e. logarithmic
+├── power_curve_single_profile     # Calculate the mechanical power curve using a single wind profile, i.e. logarithmic
 │
 ├── config/
 │   └── config.yaml                # Input configuration file (create directory manually,
@@ -390,7 +449,7 @@ AWE-Production-Estimation/
 ### Main Modules Overview
 
 - **`qsm.py`**  
-  Implements the core physical model using a quasi-steady formulation. Supports 1D/2D wind profiles and constraint enforcement.
+  Implements the core physical model using a quasi-steady formulation.
 
 - **`exp_validation_utils.py`**  
   Contains helper functions for validation and result processing.
@@ -401,6 +460,8 @@ AWE-Production-Estimation/
 - **`power_curve_constructor.py`**  
   Automates the generation of power curves by running cycle optimizations over a range of wind speeds.
 
+- **`energy_estimator.py`**  
+  Defines electrical power curves based on electrical efficiencies and estimates the productivity of the AWES based on historical data.
 ---
 
 > ⚠️ **Important:** Please create the `output/` folder manually inside the project root before running simulations or optimizations. The power curves are saved in this directory.
@@ -414,7 +475,6 @@ Once your environment is set up and the `output/` folder is created, you're read
 A set of example scripts is provided in the `examples/` folder. These demonstrate typical use cases such as:
 
 - Running a single quasi-steady simulation
-- Comparing quasi-steady simulation with experimental data
 - Performing a full cycle optimization
 
 To run any example:

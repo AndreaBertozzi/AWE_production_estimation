@@ -111,3 +111,40 @@ opt_settings:
   ftol: 1e-3
   eps: 1e-6
 
+trajectory_etas:
+  efficiency: 
+
+# Electrical efficiencies
+electrical_etas:
+  motor_controller:
+    self_consumption:  # W
+    efficiency: 
+
+  DC_AC_converter:
+    self_consumption: # W
+    efficiency: 
+  
+  external_battery:
+    connected: false
+    self_consumption: # W
+    efficiency: 
+
+power_curve_smoothing:
+  only_successful_opts: true
+  smooth: true
+  plot_results: true
+  fit_order:
+    F_RO: 2
+    F_RI: 5 #3
+    average_elevation: 2
+    min_tether_length: 5
+  ineq_tols:
+    F_RI: 100
+    average_elevation: 0.005  
+  index_offset:
+    F_RO: -1 #0
+    average_elevation: 3 #4
+    min_tether_length: -8
+  end_index:
+    
+    

@@ -3,3 +3,5 @@ scipy
 matplotlib
 pandas
 PyYAML
+cfgrib
+xarray
