@@ -35,7 +35,7 @@ def load_process_protologger_file(data_path, test_name):
 
         protologger_file_path = None
         for file in os.listdir(test_path):
-            if file.endswith('_ProtoLogger_lidar.csv'):
+            if file.endswith('ProtoLogger.csv'):
                 protologger_file_path = os.path.join(test_path, file)
                 break
 
@@ -111,13 +111,11 @@ def load_process_protologger_file(data_path, test_name):
         'kite_0_pitch', 'kite_velocity_abs',
         'ground_tether_reelout_speed', 'ground_tether_length', 'ground_tether_force',
         'airspeed_angle_of_attack', 'ground_mech_power',
-        'kite_actual_depower',
+        'kite_actual_depower', 'ground_wind_velocity',
         'kite_pos_east', 'kite_pos_north', 'kite_height', 
-        'kite_elevation', 'kite_azimuth', 'kite_distance', 'optimizer_step_index',
-        'airspeed_apparent_windspeed', 'kite_estimated_va', 'kite_measured_va',
+        'kite_elevation', 'kite_azimuth', 'kite_distance',
+        'airspeed_apparent_windspeed', 
         'kite_heading', 'kite_course',
-        'lift_coeff', 'drag_coeff',
-        '100m Wind Speed (m/s)',
         'flight_phase', 'flight_phase_index']
 
     protologger_file = select_columns(protologger_file, columns_to_extract)
@@ -147,12 +145,12 @@ def find_end_RO_and_max_tether_length(df=pd.DataFrame, threshold=8.):
             - max_tether_length_RO (float): The tether length at the detected end of RO.
             - end_RO_idx (int): Index in the DataFrame where the end of RO occurs.
     """
-    avg_ro_depwr = np.mean(df.kite_actual_depower[df.flight_phase_index==1])
-    depwr_idx = (df.kite_actual_depower -  avg_ro_depwr) > threshold
-    end_RO_idx = next((i for i, x in enumerate(depwr_idx) if x != 0), -1)
+    # Find the index where tetherlength is maximum
+    end_RO_idx = df.ground_tether_length.idxmax()
+
+    # Get the maximum tetherlength at that index
     max_tether_length_RO = df.ground_tether_length[end_RO_idx]
     return max_tether_length_RO, end_RO_idx
-
 def find_start_RO(df, threshold=0.15):
     """
     Determines the start of the reel-out (RO) phase based on tether reel-out speed.
@@ -262,11 +260,20 @@ def find_end_RI_and_min_tether_length(exp_cycle_dataframe, threshold=2):
             - end_RI_idx (int): Index in the DataFrame corresponding to the end of RI.
               Returns -1 if no such point is found.
     """
-    avg_RIRO_depwr = np.mean(exp_cycle_dataframe.kite_actual_depower[exp_cycle_dataframe.flight_phase_index == 4].iloc[-5:-1])
-    depwr_idx = (exp_cycle_dataframe.kite_actual_depower -  avg_RIRO_depwr) > threshold
-    depwr_idx = depwr_idx.iloc[::-1]
-    end_RI_idx = len(depwr_idx) - next((i for i, x in enumerate(depwr_idx) if x != 0), -1)
+    # avg_RIRO_depwr = np.mean(exp_cycle_dataframe.kite_actual_depower[exp_cycle_dataframe.flight_phase_index == 4].iloc[-5:-1])
+    # depwr_idx = (exp_cycle_dataframe.kite_actual_depower -  avg_RIRO_depwr) > threshold
+    # depwr_idx = depwr_idx.iloc[::-1]
+    # end_RI_idx = len(depwr_idx) - next((i for i, x in enumerate(depwr_idx) if x != 0), -1)
+    # min_tether_length_RI = exp_cycle_dataframe.ground_tether_length[end_RI_idx]
+    # return min_tether_length_RI, end_RI_idx
+    
+    # Find index of minimum reeling speed during RI
+    end_RI_idx = exp_cycle_dataframe.ground_tether_length.idxmin()
+
+    # Get the corresponding minimum tether length at end of RI
     min_tether_length_RI = exp_cycle_dataframe.ground_tether_length[end_RI_idx]
+
+
     return min_tether_length_RI, end_RI_idx
 
 # Identify actual flight phases
@@ -299,7 +306,7 @@ def find_qsm_flight_phases(exp_cycle_dataframe):
     exp_cycle_dataframe.reset_index(drop=True, inplace=True)
 
     # Change the flight_phase_index of elements of RORI to RO
-    _, end_RO_idx = find_end_RO_and_max_tether_length(exp_cycle_dataframe, threshold=8.0)
+    _, end_RO_idx = find_end_RO_and_max_tether_length(exp_cycle_dataframe, threshold=0.)
     exp_cycle_dataframe.loc[0:end_RO_idx, 'flight_phase_index'] = 1
 
     # Change the flight_phase_index of elements of RIRO to RI
@@ -331,7 +338,7 @@ def pack_operational_parameters_and_results(exp_cycle_dataframe):
             - 'ground_tether_length', 'ground_tether_force', 'ground_tether_reelout_speed'
             - 'ground_mech_power'
             - 'optimizer_step_index'
-            - '100m Wind Speed (m/s)'
+            - ground_wind_velocity
 
     Returns:
         dict: Dictionary of computed metrics and parameters for the flight cycle, including:
@@ -371,8 +378,7 @@ def pack_operational_parameters_and_results(exp_cycle_dataframe):
                  'RO_mech_power_avg_kW': np.mean(RO_dataframe.ground_mech_power)/1000,
                  'RIRO_mech_power_avg_kW': np.mean(RIRO_dataframe.ground_mech_power)/1000,
                  'cycle_mech_power_avg_kW': np.mean(exp_cycle_dataframe.ground_mech_power)/1000,
-                 'RO_autotuner_step': np.mean(RO_dataframe.optimizer_step_index),
-                 'wind_speed_100m_mps': np.mean(exp_cycle_dataframe['100m Wind Speed (m/s)'])    
+                 'wind_speed_mast_mps': np.mean(exp_cycle_dataframe['ground_wind_velocity'])    
                  }
     return exp_cycle_res_dict
 
@@ -393,7 +399,7 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
             Must contain the following columns:
             - 'flight_phase_index', 'kite_actual_depower', 'kite_azimuth', 'kite_elevation',
             - 'ground_tether_length', 'ground_tether_force', 'ground_tether_reelout_speed',
-            - 'ground_mech_power', '100m Wind Speed (m/s)'
+            - 'ground_mech_power', ground_wind_velocity
 
         sys_props (SystemProperties): System configuration used to run the simulation.
 
@@ -424,26 +430,27 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     avg_reeling_speed_RO = np.mean(exp_RO_dataframe.ground_tether_reelout_speed)
     avg_reeling_speed_RI = np.mean(exp_RI_dataframe.ground_tether_reelout_speed)
     avg_reeling_speed_RIRO = np.mean(exp_RIRO_dataframe.ground_tether_reelout_speed)
+    max_reeling_speed_RIRO = np.max(exp_RIRO_dataframe.ground_tether_reelout_speed)
    
     max_tether_length_RO, _ = find_end_RO_and_max_tether_length(exp_cycle_dataframe)
     min_tether_length_RI, _ = find_end_RI_and_min_tether_length(exp_cycle_dataframe)
 
     env_avg = LogProfile()
-    env_avg.set_reference_wind_speed(np.mean(exp_cycle_dataframe['100m Wind Speed (m/s)']))
-    env_avg.set_reference_height(100)
+    env_avg.set_reference_wind_speed(np.mean(exp_cycle_dataframe['ground_wind_velocity']))
+    env_avg.set_reference_height(6)
 
     env_trac = LogProfile()
-    env_trac.set_reference_wind_speed(np.mean(exp_RO_dataframe['100m Wind Speed (m/s)']))
-    env_trac.set_reference_height(100)
+    env_trac.set_reference_wind_speed(np.mean(exp_RO_dataframe['ground_wind_velocity']))
+    env_trac.set_reference_height(6)
     env_retr = LogProfile()
-    env_retr.set_reference_wind_speed(np.mean(exp_RI_dataframe['100m Wind Speed (m/s)']))
-    env_retr.set_reference_height(100)
+    env_retr.set_reference_wind_speed(np.mean(exp_RI_dataframe['ground_wind_velocity']))
+    env_retr.set_reference_height(6)
     env_trans = LogProfile()
-    env_trans.set_reference_wind_speed(np.mean(exp_RIRO_dataframe['100m Wind Speed (m/s)']))
-    env_trans.set_reference_height(100)
+    env_trans.set_reference_wind_speed(np.mean(exp_RIRO_dataframe['ground_wind_velocity']))
+    env_trans.set_reference_height(6)
    
     RO_settings = {'control': ('reeling_speed', avg_reeling_speed_RO),
-                   'pattern': {'azimuth_angle': max_az_trac, 'rel_elevation_angle': rel_el_angle}, 'time_step': timestep}
+                   'pattern': {'azimuth_angle': -max_az_trac, 'rel_elevation_angle': rel_el_angle}, 'time_step': timestep}
         
     # Default cycle settings for speed control
     cycle_settings = {'cycle': {
@@ -456,7 +463,7 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
 
                         },
                         'transition': {
-                            'control': ('reeling_speed', avg_reeling_speed_RIRO),
+                            'control': ('reeling_speed', max_reeling_speed_RIRO),
                             'time_step': timestep
                         },
                         'traction': RO_settings
@@ -541,12 +548,21 @@ def pack_results_sim(cycle, env_state):
     y_traj = list(y_traj)
     z_traj = list(z_traj)
     tether_length = [kin.straight_tether_length for kin in cycle.traction_phase.kinematics]
+    elevation_angle = [kin.elevation_angle for kin in cycle.traction_phase.kinematics]
+    azimuth_angle = [kin.azimuth_angle for kin in cycle.traction_phase.kinematics]
+    course_angle = [kin.course_angle for kin in cycle.traction_phase.kinematics]
+    
+    
     flight_phase_index = 1*np.ones_like(tether_length)
     # Assuming each list is a column
-    data = [time_trac, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index]
+    data = [time_trac, reel_speeds, tether_forces, tether_length, power_ground,\
+             x_traj, y_traj, z_traj, flight_phase_index,\
+                elevation_angle, azimuth_angle, course_angle, app_wind_speed]
     RO_sim_df = pd.DataFrame(list(zip(*data)),\
                               columns=['time', 'ground_tether_reelout_speed', 'ground_tether_force',\
-                                        'ground_tether_length', 'ground_mech_power', 'x_pos', 'y_pos', 'z_pos', 'flight_phase_index'])
+                                        'ground_tether_length', 'ground_mech_power', 'x_pos', 'y_pos',\
+                                      'z_pos', 'flight_phase_index', 'elevation_angle', 'azimuth_angle',\
+                                          'course_angle', 'app_wind_speed'])
 
     # --- Retraction Phase ---
     time_retr = cycle.retraction_phase.time
