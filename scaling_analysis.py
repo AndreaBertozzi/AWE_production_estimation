@@ -25,7 +25,7 @@ to_plot = ['P_cycle [W]', 'F_RO [N]',\
 case_names = ['baseline', '100', '200', '300', '400']
 
 for case_name in case_names:
-    config_filename = 'config/config_' + case_name + '.yaml'
+    config_filename = 'output/config_' + case_name + '.yaml'
     output_filename = 'output/' + case_name + '/power_curve_log_profile.csv'
 
     output_dataframe = pd.read_csv(output_filename, sep = ';')
