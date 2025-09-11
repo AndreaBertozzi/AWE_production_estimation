@@ -124,7 +124,7 @@ def load_process_protologger_file(data_path, test_name):
     return cycle_dataframe_list
 
 # Pattern analysis
-def find_end_RO_and_max_tether_length(df=pd.DataFrame, threshold=8.):
+def find_end_RO_and_max_tether_length(df=pd.DataFrame, threshold=1.):
     """
     Identifies the end of the reel-out (RO) phase based on a depower threshold,
     and returns the corresponding maximum tether length.
@@ -144,13 +144,20 @@ def find_end_RO_and_max_tether_length(df=pd.DataFrame, threshold=8.):
         Tuple[float, int]: A tuple containing:
             - max_tether_length_RO (float): The tether length at the detected end of RO.
             - end_RO_idx (int): Index in the DataFrame where the end of RO occurs.
-    """
+    # """
     # Find the index where tetherlength is maximum
     end_RO_idx = df.ground_tether_length.idxmax()
 
     # Get the maximum tetherlength at that index
     max_tether_length_RO = df.ground_tether_length[end_RO_idx]
     return max_tether_length_RO, end_RO_idx
+
+    # avg_ro_depwr = np.mean(df.kite_actual_depower[df.flight_phase_index==1])
+    # depwr_idx = (df.kite_actual_depower -  avg_ro_depwr) > threshold
+    # end_RO_idx = next((i for i, x in enumerate(depwr_idx) if x != 0), -1)
+    # max_tether_length_RO = df.ground_tether_length[end_RO_idx]
+    # return max_tether_length_RO, end_RO_idx
+
 def find_start_RO(df, threshold=0.15):
     """
     Determines the start of the reel-out (RO) phase based on tether reel-out speed.
@@ -306,12 +313,12 @@ def find_qsm_flight_phases(exp_cycle_dataframe):
     exp_cycle_dataframe.reset_index(drop=True, inplace=True)
 
     # Change the flight_phase_index of elements of RORI to RO
-    _, end_RO_idx = find_end_RO_and_max_tether_length(exp_cycle_dataframe, threshold=0.)
+    _, end_RO_idx = find_end_RO_and_max_tether_length(exp_cycle_dataframe, threshold=1)
     exp_cycle_dataframe.loc[0:end_RO_idx, 'flight_phase_index'] = 1
 
     # Change the flight_phase_index of elements of RIRO to RI
     start_RIRO_idx = next((i for i, x in enumerate(exp_cycle_dataframe.flight_phase_index) if x == 4), -1)
-    _, end_RI_idx = find_end_RI_and_min_tether_length(exp_cycle_dataframe, threshold=2)
+    _, end_RI_idx = find_end_RI_and_min_tether_length(exp_cycle_dataframe, threshold=0.5)
     exp_cycle_dataframe.loc[start_RIRO_idx:end_RI_idx, 'flight_phase_index'] = 3
     return exp_cycle_dataframe
 
@@ -424,10 +431,12 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
 
     max_az_trac, rel_el_angle, avg_el_angle = find_RO_pattern_param(exp_RO_dataframe)
 
+    print(max_az_trac*180/np.pi, rel_el_angle*180/np.pi, avg_el_angle*180/np.pi)
+
     avg_tether_force_RO = np.mean(exp_RO_dataframe.ground_tether_force)*9.806
     avg_tether_force_RI = np.mean(exp_RI_dataframe.ground_tether_force)*9.806
     
-    avg_reeling_speed_RO = np.mean(exp_RO_dataframe.ground_tether_reelout_speed)
+    avg_reeling_speed_RO = np.mean(exp_RO_dataframe.ground_tether_reelout_speed.to_numpy()[:-50])
     avg_reeling_speed_RI = np.mean(exp_RI_dataframe.ground_tether_reelout_speed)
     avg_reeling_speed_RIRO = np.mean(exp_RIRO_dataframe.ground_tether_reelout_speed)
     max_reeling_speed_RIRO = np.max(exp_RIRO_dataframe.ground_tether_reelout_speed)
@@ -438,20 +447,24 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     env_avg = LogProfile()
     env_avg.set_reference_wind_speed(np.mean(exp_cycle_dataframe['ground_wind_velocity']))
     env_avg.set_reference_height(6)
-
+    env_avg.set_roughness_length(0.1)
     env_trac = LogProfile()
     env_trac.set_reference_wind_speed(np.mean(exp_RO_dataframe['ground_wind_velocity']))
     env_trac.set_reference_height(6)
+    env_trac.set_roughness_length(0.1)
     env_retr = LogProfile()
     env_retr.set_reference_wind_speed(np.mean(exp_RI_dataframe['ground_wind_velocity']))
     env_retr.set_reference_height(6)
+    print(np.mean(exp_RI_dataframe['ground_wind_velocity']))
+    env_retr.set_roughness_length(0.1)
     env_trans = LogProfile()
     env_trans.set_reference_wind_speed(np.mean(exp_RIRO_dataframe['ground_wind_velocity']))
     env_trans.set_reference_height(6)
+    env_trans.set_roughness_length(0.1)
    
     RO_settings = {'control': ('reeling_speed', avg_reeling_speed_RO),
                    'pattern': {'azimuth_angle': -max_az_trac, 'rel_elevation_angle': rel_el_angle}, 'time_step': timestep}
-        
+    
     # Default cycle settings for speed control
     cycle_settings = {'cycle': {
                             'traction_phase': TractionPhasePattern,
@@ -463,7 +476,7 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
 
                         },
                         'transition': {
-                            'control': ('reeling_speed', max_reeling_speed_RIRO),
+                            'control': ('reeling_speed', avg_reeling_speed_RIRO),
                             'time_step': timestep
                         },
                         'traction': RO_settings
@@ -670,7 +683,7 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     colors = ["#F85033",  # Tomato
           "#4682B4",  # SteelBlue
           "#32CD32",  # LimeGreen
-          "#FFD700"]  # Gold
+          "#4682B4"]  # Gold
     
     ec = '#00395d'
     sc = '#00aeef'
@@ -678,11 +691,11 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     fig = plt.figure(figsize=(14, 8))
     gs = fig.add_gridspec(4, 2, width_ratios=[0.8, 1], wspace=0.4)
 
-    fig.suptitle('Cycle comparison')
+    # fig.suptitle('Cycle comparison')
     # 3D Plot on the Left
     ax3d = fig.add_subplot(gs[0:3, 0], projection='3d')
     ax3d.view_init(elev=35, azim=40)
-    for i in range(1,5):
+    for i in [1, 3, 4]:
         ax3d.plot(df_sim[df_sim.flight_phase_index==i].x_pos, 
                 df_sim[df_sim.flight_phase_index==i].y_pos,
                 df_sim[df_sim.flight_phase_index==i].z_pos,
@@ -700,8 +713,8 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     ax3d.set_xticklabels([])
     ax3d.set_yticklabels([])
     ax3d.set_zticklabels([])
-    ax3d.set_title("3D trajectories")
-    ax3d.legend(['Reel-out', 'RORI', 'Reel-in', 'RIRO'])
+    #ax3d.set_title("3D trajectories")
+    ax3d.legend(['Reel-out','Reel-in', 'RIRO'])
 
 
     ax0 = fig.add_subplot(gs[3, 0])
@@ -730,9 +743,9 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     xlb, xub = plt.xlim()
     ax0.hlines(0, xlb, xub, colors=['black'], linewidth = 1)
     # Adding labels, title, and formatting
-    ax0.set_xlabel("Power Metrics")
+    # ax0.set_xlabel("Power Metrics")
     ax0.set_ylabel("Average power (kW)")
-    ax0.set_title("Comparison of average mechanical power")
+    #ax0.set_title("Comparison of average mechanical power")
     ax0.set_xticks(x)
     ax0.set_xticklabels(labels)
 
@@ -741,7 +754,7 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     ax1 = fig.add_subplot(gs[0, 1])
     ax1.plot(df_exp.time - df_exp.time[0], df_exp.ground_tether_length, label="Experiment", c=ec)
     ax1.plot(df_sim.time, df_sim.ground_tether_length, label="Simulation", c=sc)
-    ax1.set_title("Tether length")
+    #ax1.set_title("Tether length")
     ax1.legend()
     ax1.set_xticks([])
     ax1.set_ylabel('Length [m]')
@@ -751,7 +764,7 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     ax2 = fig.add_subplot(gs[1, 1])
     ax2.plot(df_exp.time - df_exp.time[0], df_exp.ground_tether_reelout_speed, label="Experiment", c=ec)
     ax2.plot(df_sim.time, df_sim.ground_tether_reelout_speed, label="Simulation", c=sc)
-    ax2.set_title("Reelout speed")
+    #ax2.set_title("Reelout speed")
     ax2.set_xticks([])
     ax2.set_ylabel('Speed [m/s]')
 
@@ -760,7 +773,7 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     ax3 = fig.add_subplot(gs[2, 1])
     ax3.plot(df_exp.time - df_exp.time[0], df_exp.ground_tether_force * 9.806 / 1000, label="Experiment", c=ec)
     ax3.plot(df_sim.time, df_sim.ground_tether_force / 1000, label="Simulation", c=sc)
-    ax3.set_title("Ground tether force")
+    #ax3.set_title("Ground tether force")
     ax3.set_ylabel('Force [kN]')
     ax3.set_xticks([])
 
@@ -768,6 +781,6 @@ def cycle_to_cycle_plot(df_sim, df_exp,cycle_sim, cycle_exp):
     ax4 = fig.add_subplot(gs[3, 1])
     ax4.plot(df_exp.time - df_exp.time[0], df_exp.ground_mech_power / 1000, label="Experiment", c=ec)
     ax4.plot(df_sim.time, df_sim.ground_mech_power / 1000, label="Simulation", c=sc)
-    ax4.set_title("Mechanical power")
+    #ax4.set_title("Mechanical power")
     ax4.set_ylabel('Power [kW]')
     ax4.set_xlabel('Time [s]')
