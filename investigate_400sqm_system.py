@@ -11,8 +11,8 @@ def qsm_settings_from_opt_sol(opt_sol):
         'cycle': {
             'traction_phase':                   TractionPhasePattern,
             'include_transition_energy':        True,
-            'tether_length_start_retraction':   opt_sol[6],      
-            'tether_length_end_retraction':     opt_sol[5],  
+            'tether_length_start_retraction':   opt_sol[6]+opt_sol[5],      
+            'tether_length_end_retraction':     opt_sol[6],  
             'elevation_angle_traction':         opt_sol[2],
         },
         'retraction': {
@@ -33,7 +33,7 @@ def qsm_settings_from_opt_sol(opt_sol):
 env_state = LogProfile()
 # Set reference height and wind speed
 env_state.set_reference_height(100)
-env_state.set_reference_wind_speed(15)
+env_state.set_reference_wind_speed(6)
 
 # Load system properties from config.yaml
 with open("config/config_400.yaml") as f:
@@ -75,29 +75,27 @@ opt_set = parse_opt_settings(config)
 oc = OptimizerCycle(settings, sys_props, env_state, enabled_opt_var, enabled_cons,  
                     param_values_array, 'force')
 
-oc.x0_real_scale = np.array([1.97483363e+05*1.5, 2.56563826e+04*1.5, 5.23598776e-01, 1.67633781e-01,\
- 6.28844674e-01, 2.80000000e+02, 4.70000000e+02])
-oc.scaling_x = np.array([1e-6, 1e-5, 1, 1, 1, 1e-3, 1e-3])
+oc.x0_real_scale = np.array([2.10365617e+05*0.4, 7.08563116e+04*0.4, 30*np.pi/180, 1.72514056e-01,\
+                         6.50294907e-01, 330, 450])
+oc.scaling_x = np.array([1e-6, 5e-5, 0.5, 1, 1, 1e-3, 1e-3])
+oc.eval_point(True, False, oc.x_opt_real_scale)
+plt.show()
           
 oc.optimize(maxiter = opt_set['maxiter'],
-             iprint  = opt_set['iprint'],
-             eps     = opt_set['eps'],
-             ftol    = opt_set['ftol'])
+            iprint  = opt_set['iprint'],
+            eps     = opt_set['eps'],
+            ftol    = opt_set['ftol'])
 
 print(oc.x_opt_real_scale)
 oc.plot_opt_evolution()
 oc.eval_point(True, False, oc.x_opt_real_scale)
 plt.show()
 
+cut_out_sol = np.array([2.12030705e+05, 9.07982246e+04, 5.47284035e-01, 1.64974898e-01,
+ 6.51219292e-01, 3.45328135e+02, 4.63836006e+02])
 
-opt_sol = [1.97483363e+05, 2.56563826e+04, 5.23598776e-01, 1.67633781e-01,\
- 6.28844674e-01, 2.80000000e+02, 4.70000000e+02]
-
-
-#oc.eval_point(True, False, opt_sol)
-
-tent_sol = np.array([1.97483363e+05*1.5, 2.56563826e+04*1.5, 5.23598776e-01, 1.67633781e-01,\
- 6.28844674e-01, 2.80000000e+02, 4.70000000e+02])
+tent_sol = np.array([2.12030705e+05, 9.07982246e+04, 5.47284035e-01, 1.64974898e-01,
+ 6.51219292e-01, 3.45328135e+02, 4.63836006e+02])
 settings = qsm_settings_from_opt_sol(tent_sol)
 
 # Create pumping cycle simulation object, run simulation, and plot results.
@@ -106,7 +104,8 @@ cycle.run_simulation(sys_props, env_state, print_summary=True)
 
 # Plotting different quantities of interests
 cycle.time_plot(('reeling_speed', 'power_ground', 'apparent_wind_speed', 'tether_force_ground'),
-                    ('Reeling speed [m/s]', 'Power [W]', 'Apparent wind speed [m/s]', 'Tether force [N]'))
+                    ('Reeling speed [m/s]', 'Power [kW]', 'App. wind speed [m/s]', 'Tether force [kN]'), 
+                    (None, 1e-3, None, 1e-3))
 
 # Plotting other quantitities, and scaling the angles to have them in degrees
 cycle.time_plot(('straight_tether_length', 'elevation_angle', 'azimuth_angle', 'course_angle'),
