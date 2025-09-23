@@ -476,9 +476,13 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
         self.pitch_depowered = -5 * np.pi/180.                  # [rad]
 
         # Aerodynamic coefficients of kite and tether.    
-        self.angles_of_attack_curve = np.linspace(0, 25, 26) * np.pi/180.
-        self.kite_lift_coefficients_curve_parameters = np.array([0.1, 2.5, 10*np.pi/180., 8*np.pi/180.])*1.15
-        self.kite_drag_coefficients_curve_parameters = np.array([0.1108, 1.3822, -1.384])/2
+        #self.angles_of_attack_curve = np.linspace(0, 25, 26) * np.pi/180.
+        #self.kite_lift_coefficients_curve_parameters = np.array([0.1, 2.5, 10*np.pi/180., 8*np.pi/180.])*1.15
+        #self.kite_drag_coefficients_curve_parameters = np.array([0.1108, 1.3822, -1.384])/2
+        self.angles_of_attack_range = np.array(float)
+        self.lift_coefficient_range = np.array(float)
+        self.drag_coefficient_range = np.array(float)
+        
         self.tether_drag_coefficient = 1.1  # [-]
 
         # Relevant operational limits.
@@ -543,8 +547,10 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
                 x = a - alpha_switch - d_alpha_peak
                 return np.array([1, x, x**2]).dot(coeffs_part2)
 
-        kite_lift_coefficient = lift_curve(alpha)
-        kite_drag_coefficient = np.array([1, alpha, alpha**2]).dot(self.kite_drag_coefficients_curve_parameters)
+        #kite_lift_coefficient = lift_curve(alpha)
+        kite_lift_coefficient = np.interp(alpha, self.angles_of_attack_range, self.lift_coefficient_range)
+        kite_drag_coefficient = np.interp(alpha, self.angles_of_attack_range, self.drag_coefficient_range)
+        #kite_drag_coefficient = np.array([1, alpha, alpha**2]).dot(self.kite_drag_coefficients_curve_parameters)
         
         c_l = kite_lift_coefficient
         c_d_tether = .25*d*le/s*self.tether_drag_coefficient
@@ -838,7 +844,7 @@ class SteadyState:
             update_aero_coefficients = False
 
         self.n_iterations_aoa = 0
-        # fraction_d_alpha = 1.  #
+        fraction_d_alpha = 1.  #
         while True:
             # Aerodynamics of kite.
             c_r = system_properties.aerodynamic_force_coefficient
