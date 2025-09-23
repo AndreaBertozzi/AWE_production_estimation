@@ -390,7 +390,7 @@ def pack_operational_parameters_and_results(exp_cycle_dataframe):
     return exp_cycle_res_dict
 
 # Running simulations
-def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep = 0.25, control = 'speed'):
+def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, wind_prof_data, timestep = 0.25, control = 'speed'):
     """
     Runs a simulated power cycle of a tethered kite system using parameters extracted from experimental flight data.
 
@@ -423,6 +423,7 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
             - sim_cycle_dataframe: Simulated time-series data for the full cycle.
             - sim_cycle_res_dict: Dictionary of summary performance metrics from the simulation.
     """
+
     exp_cycle_dataframe = find_qsm_flight_phases(exp_cycle_dataframe)
 
     exp_RO_dataframe = exp_cycle_dataframe[exp_cycle_dataframe.flight_phase_index == 1]
@@ -430,8 +431,6 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     exp_RIRO_dataframe = exp_cycle_dataframe[exp_cycle_dataframe.flight_phase_index == 4]    
 
     max_az_trac, rel_el_angle, avg_el_angle = find_RO_pattern_param(exp_RO_dataframe)
-
-    print(max_az_trac*180/np.pi, rel_el_angle*180/np.pi, avg_el_angle*180/np.pi)
 
     avg_tether_force_RO = np.mean(exp_RO_dataframe.ground_tether_force)*9.806
     avg_tether_force_RI = np.mean(exp_RI_dataframe.ground_tether_force)*9.806
@@ -445,9 +444,9 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     min_tether_length_RI, _ = find_end_RI_and_min_tether_length(exp_cycle_dataframe)
 
     env_avg = LogProfile()
-    env_avg.set_reference_wind_speed(np.mean(exp_cycle_dataframe['ground_wind_velocity']))
-    env_avg.set_reference_height(6)
-    env_avg.set_roughness_length(0.1)
+    env_avg.set_reference_wind_speed(wind_prof_data.v_ref)
+    env_avg.set_reference_height(wind_prof_data.h_ref)
+    env_avg.set_roughness_length(wind_prof_data.z_0)
     env_trac = LogProfile()
     env_trac.set_reference_wind_speed(np.mean(exp_RO_dataframe['ground_wind_velocity']))
     env_trac.set_reference_height(6)
@@ -455,7 +454,6 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     env_retr = LogProfile()
     env_retr.set_reference_wind_speed(np.mean(exp_RI_dataframe['ground_wind_velocity']))
     env_retr.set_reference_height(6)
-    print(np.mean(exp_RI_dataframe['ground_wind_velocity']))
     env_retr.set_roughness_length(0.1)
     env_trans = LogProfile()
     env_trans.set_reference_wind_speed(np.mean(exp_RIRO_dataframe['ground_wind_velocity']))
@@ -465,6 +463,7 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     RO_settings = {'control': ('reeling_speed', avg_reeling_speed_RO),
                    'pattern': {'azimuth_angle': -max_az_trac, 'rel_elevation_angle': rel_el_angle}, 'time_step': timestep}
     
+    print(np.rad2deg((max_az_trac, rel_el_angle, avg_el_angle)))
     # Default cycle settings for speed control
     cycle_settings = {'cycle': {
                             'traction_phase': TractionPhasePattern,
@@ -498,7 +497,8 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, timestep =
     cycle.tether_length_end_retraction = min_tether_length_RI
     
     
-    cycle.run_simulation(sys_props, [env_retr, env_trans, env_trac], print_summary=False) 
+    #cycle.run_simulation(sys_props, [env_retr, env_trans, env_trac], print_summary=False) 
+    cycle.run_simulation(sys_props, env_avg, print_summary=False) 
 
     sim_cycle_dataframe, sim_cycle_res_dict = pack_results_sim(cycle, env_avg)
 
@@ -653,7 +653,7 @@ def pack_results_sim(cycle, env_state):
     
     return sim_cycle_dataframe, sim_cycle_res_dict
 
-def run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props, control='speed'):
+def run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props, wind_profile_data, control='speed'):
     all_sim_dataframes = [] 
     all_exp_dataframes = []
     all_cycle_res_sim = pd.DataFrame()  
@@ -661,7 +661,7 @@ def run_simulations_from_list_of_exp_dataframes(cycle_dataframe_list, sys_props,
 
     for i, exp_cycle_dataframe in enumerate(cycle_dataframe_list):
         try:
-            sim_cycle_dataframe, cycle_res_sim_dict = run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, control = control)
+            sim_cycle_dataframe, cycle_res_sim_dict = run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, wind_profile_data.iloc[i], control = control)
             # Append experimental results
             exp_cycle_dataframe = find_qsm_flight_phases(exp_cycle_dataframe)
             all_exp_dataframes.append(exp_cycle_dataframe)         
