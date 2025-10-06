@@ -355,109 +355,135 @@ class Optimizer:
 
 
 class OptimizerCycle(Optimizer):
-    def __init__(self, cycle_settings, system_properties, environment_state, reduce_x=None,
-                  reduce_ineq_cons=None, parametric_cons_values = [1, 100*np.pi/180], force_or_speed_control = 'force'): 
-              
-        self.force_or_speed_control = force_or_speed_control
-        self.parametric_cons_values = parametric_cons_values
+    def __init__(
+        self,
+        cycle_settings,
+        system_properties,
+        environment_state,
+        reduce_x=None,
+        reduce_ineq_cons=None,
+        parametric_cons_values=None,
+        force_or_speed_control="force"
+        ):
+            self.force_or_speed_control = force_or_speed_control
+            self.parametric_cons_values = parametric_cons_values or [1, 100 * np.pi / 180, 1., 20.]
 
-        if self.force_or_speed_control == 'force':
-            """Tether force controlled cycle optimizer."""
-            self.opt_variable_labels = [
-                "Reel-out\nforce [N]",
-                "Reel-in\nforce [N]",
+            # Common variable names
+            labels_common = [
                 "Avg. elevation\nangle [rad]",
                 "Rel. elevation\nangle [rad]",
                 "Max. azimuth\nangle [rad]",
                 "Tether\nstroke [m]",
                 "Minimum tether\nlength [m]"
             ]
-            self.x0_real_scale_default = np.array([5000, 500, 0.523599, 0.174444, 0.297777, 120, 150])
-            self.scaling_x_default = np.array([5e-5, 1e-4, 1, 1, 1, 1e-3, 1e-3])
-            self.bounds_real_scale_default = np.array([
-                [np.nan, np.nan],
-                [np.nan, np.nan],
-                [np.nan, np.nan], # avg. elevation angle
-                [np.nan, np.nan], # rel. elevation angle 
-                [np.nan, np.nan], # max. azimuth angle
-                [np.nan, np.nan],
-                [np.nan, np.nan],
-            ])
 
-            # Initiate attributes of parent class.
-            bounds = self.bounds_real_scale_default.copy()
-            bounds[0, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]
-            bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]        
+            # Default NaN bounds template (7 variables)
+            nan_bounds = np.full((7, 2), np.nan)
 
-        elif self.force_or_speed_control == 'speed':
-            """Tether speed controlled cycle optimizer."""
-            self.opt_variable_labels = [
-                "Reel-out traction\nspeed [m/s]",
-                "Reel-out retraction\nspeed [m/s]",
-                "Avg. elevation\nangle [rad]",
-                "Rel. elevation\nangle [rad]",
-                "Max. azimuth\nangle [rad]",
-                "Tether\nstroke [m]",
-                "Minimum tether\nlength [m]"
+            if force_or_speed_control == "force":
+                """Tether force controlled cycle optimizer."""
+                self.opt_variable_labels = [
+                    "Reel-out\nforce [N]",
+                    "Reel-in\nforce [N]",
+                    *labels_common
+                ]
+                self.x0_real_scale_default = np.array(
+                    [5000, 500, 0.523599, 0.174444, 0.297777, 120, 150]
+                )
+                self.scaling_x_default = np.array([5e-5, 1e-4, 1, 1, 1, 1e-3, 1e-3])
+
+                bounds = nan_bounds.copy()
+                bounds[0, :] = [
+                    system_properties.tether_force_min_limit,
+                    system_properties.tether_force_max_limit,
+                ]
+                bounds[1, :] = [
+                    system_properties.tether_force_min_limit,
+                    system_properties.tether_force_max_limit,
+                ]
+
+            elif force_or_speed_control == "speed":
+                """Tether speed controlled cycle optimizer."""
+                self.opt_variable_labels = [
+                    "Reel-out traction\nspeed [m/s]",
+                    "Reel-in\nspeed [m/s]",
+                    *labels_common
+                ]
+                self.x0_real_scale_default = np.array(
+                    [2., -4., 0.523599, 0.174444, 0.297777, 120, 150]
+                )
+                self.scaling_x_default = np.array([1e-1, 1e-1, 1, 1, 1, 1e-3, 1e-3])
+
+                bounds = nan_bounds.copy()
+                bounds[0, :] = [
+                    system_properties.reeling_speed_min_limit,
+                    system_properties.reeling_speed_max_limit,
+                ]
+                bounds[1, :] = [
+                    -system_properties.reeling_speed_max_limit,
+                    -system_properties.reeling_speed_min_limit,
+                ]
+
+            elif force_or_speed_control == "hybrid":
+                """Hybridly controlled cycle optimizer."""
+                self.opt_variable_labels = [
+                    "Reel-out traction\nspeed [m/s]",
+                    "Reel-in\nforce [N]",
+                    *labels_common
+                ]
+                self.x0_real_scale_default = np.array(
+                    [2., 500., 0.523599, 0.174444, 0.297777, 120, 150]
+                )
+                self.scaling_x_default = np.array([1e-1, 1e-4, 1, 1, 1, 1e-3, 1e-3])
+
+                bounds = nan_bounds.copy()
+                bounds[0, :] = [
+                    system_properties.reeling_speed_min_limit,
+                    system_properties.reeling_speed_max_limit,
+                ]
+                bounds[1, :] = [
+                    system_properties.tether_force_min_limit,
+                    system_properties.tether_force_max_limit,
+                ]
+            else:
+                raise ValueError(
+                    "Invalid entry for force_or_speed_control. Choose 'force', 'speed', or 'hybrid'."
+                )
+
+            # Common bounds for angular and length variables
+            bounds[2, :] = [
+                system_properties.avg_elevation_min_limit,
+                system_properties.avg_elevation_max_limit,
             ]
-            self.x0_real_scale_default = np.array([2., -4., 0.523599, 0.174444, 0.297777, 120, 150])
-            self.scaling_x_default = np.array([1e-1, 1e-1, 1, 1, 1, 1e-3, 1e-3])
-            self.bounds_real_scale_default = np.array([
-                [np.nan, np.nan],
-                [np.nan, np.nan],          
-                [np.nan, np.nan], # avg. elevation angle
-                [np.nan, np.nan], # rel. elevation angle 
-                [np.nan, np.nan], # max. azimuth angle
-                [np.nan, np.nan],
-                [np.nan, np.nan],
-            ])
-
-            # Initiate attributes of parent class.
-            bounds = self.bounds_real_scale_default.copy()
-            bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
-            bounds[1, :] = [-system_properties.reeling_speed_max_limit, -system_properties.reeling_speed_min_limit]
-
-        elif self.force_or_speed_control == 'hybrid':
-            """Hybridly controlled cycle optimizer."""
-            self.opt_variable_labels = [
-                "Reel-out traction\nspeed [m/s]",
-                "Reel-in\nforce [N]",
-                "Avg. elevation\nangle [rad]",
-                "Rel. elevation\nangle [rad]",
-                "Max. azimuth\nangle [rad]",
-                "Tether\nstroke [m]",
-                "Minimum tether\nlength [m]"
+            bounds[3, :] = [
+                system_properties.rel_elevation_min_limit,
+                system_properties.rel_elevation_max_limit,
             ]
-            self.x0_real_scale_default = np.array([2., 500., 0.523599, 0.174444, 0.297777, 120, 150])
-            self.scaling_x_default = np.array([1e-1, 1e-4, 1, 1, 1, 1e-3, 1e-3])
-            self.bounds_real_scale_default = np.array([
-                [np.nan, np.nan],
-                [np.nan, np.nan],          
-                [np.nan, np.nan], # avg. elevation angle
-                [np.nan, np.nan], # rel. elevation angle 
-                [np.nan, np.nan], # max. azimuth angle
-                [np.nan, np.nan],
-                [np.nan, np.nan],
-            ])
+            bounds[4, :] = [
+                system_properties.max_azimuth_min_limit,
+                system_properties.max_azimuth_max_limit,
+            ]
+            bounds[5, :] = [
+                system_properties.tether_stroke_min_limit,
+                system_properties.tether_stroke_max_limit,
+            ]
+            bounds[6, :] = [
+                system_properties.min_tether_length_min_limit,
+                system_properties.min_tether_length_max_limit,
+            ]
 
-            # Initiate attributes of parent class.
-            bounds = self.bounds_real_scale_default.copy()
-            bounds[0, :] = [system_properties.reeling_speed_min_limit, system_properties.reeling_speed_max_limit]
-            bounds[1, :] = [system_properties.tether_force_min_limit, system_properties.tether_force_max_limit]         
-        else:
-            raise ValueError('Check your entry for force_or_speed_control: force, speed, or hybrid!')
+            # Initialize parent class
+            super().__init__(
+                self.x0_real_scale_default.copy(),
+                bounds,
+                self.scaling_x_default.copy(),
+                reduce_x,
+                reduce_ineq_cons,
+                system_properties,
+                environment_state,
+            )
 
-        bounds[2, :] = [system_properties.avg_elevation_min_limit, system_properties.avg_elevation_max_limit]
-        bounds[3, :] = [system_properties.rel_elevation_min_limit, system_properties.rel_elevation_max_limit]
-        bounds[4, :] = [system_properties.max_azimuth_min_limit, system_properties.max_azimuth_max_limit]  
-        bounds[5, :] = [system_properties.tether_stroke_min_limit, system_properties.tether_stroke_max_limit]  
-        bounds[6, :] = [system_properties.min_tether_length_min_limit, system_properties.min_tether_length_max_limit]  
-  
-
-        super().__init__(self.x0_real_scale_default.copy(), bounds, self.scaling_x_default.copy(),
-                        reduce_x, reduce_ineq_cons, system_properties, environment_state)
-
-        self.cycle_settings = cycle_settings
+            self.cycle_settings = cycle_settings
 
     def eval_fun(self, x, scale_x=True, **kwargs):
         """Method calculating the objective and constraint functions from the eval_performance_indicators method output.
