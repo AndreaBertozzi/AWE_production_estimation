@@ -2342,9 +2342,21 @@ class Cycle(TimeSeries):
 
         # Resulting time series
         if reorder:
-            self.time = trans.time + trac.time + [t + last_time for t in retr.time]
-            self.kinematics = trans.kinematics + trac.kinematics + retr.kinematics
-            self.steady_states = trans.steady_states + trac.steady_states + retr.steady_states
+            # Start with traction
+            last_time_tran = trans.time[-1]
+            self.time = [t - last_time_tran for t in trac.time]
+
+            # Retraction: offset by last traction time
+            last_time_trac = self.time[-1]
+            self.time += [t + last_time_trac for t in retr.time]
+
+            # Transition: offset by last retraction time
+            last_time_retr = self.time[-1]
+            self.time += [t + last_time_retr for t in trans.time]
+
+            # Kinematics and steady_states: just concatenate in the same order
+            self.kinematics = trac.kinematics + retr.kinematics + trans.kinematics
+            self.steady_states = trac.steady_states + retr.steady_states + trans.steady_states
         else:
             self.time = retr.time + trans.time + trac.time
             self.kinematics = retr.kinematics + trans.kinematics + trac.kinematics
