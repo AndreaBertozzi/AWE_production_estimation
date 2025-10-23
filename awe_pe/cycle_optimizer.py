@@ -1,12 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qsm import Cycle
-from utils import flatten_dict
 from scipy import optimize as op
+
+from awe_pe.qsm import Cycle
+from awe_pe.utils import flatten_dict
+
 
 class OptimizerError(Exception):
     pass
+
 
 class Optimizer:
     """Class collecting useful functionalities for solving an optimization problem and evaluating the results using
@@ -366,7 +369,8 @@ class OptimizerCycle(Optimizer):
         force_or_speed_control="force"
         ):
             self.force_or_speed_control = force_or_speed_control
-            self.parametric_cons_values = parametric_cons_values or [1, 100 * np.pi / 180, 1., 20.]
+            self.parametric_cons_values = [1, 100 * np.pi / 180, 1., 20.] if parametric_cons_values is None else parametric_cons_values
+
 
             # Common variable names
             labels_common = [
@@ -639,7 +643,7 @@ class OptimizerCycle(Optimizer):
             cycle.trajectory_plot(steady_state_markers=True)
             cycle.trajectory_plot3d()
             
-            phase_switch_points = [cycle.transition_phase.time[0], cycle.traction_phase.time[0]]
+            phase_switch_points = [cycle.transition_phase.time[0], cycle.traction_phase.time[0], cycle.retraction_phase.time[0]]
             cycle.time_plot(('straight_tether_length', 'reeling_speed', 'tether_force_ground', 'power_ground'), y_labels=labels,
                             plot_markers=phase_switch_points)
         course_angle = [k.course_angle for k in cycle.traction_phase.kinematics]

@@ -10,8 +10,8 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 
 from qsm import * 
-from utils import *
-from cycle_optimizer import *
+from awe_pe.utils import *
+from awe_pe.cycle_optimizer import *
 
 class ElectricalPowerCurve:
     def __init__(self, output_file_path, config_file_path):

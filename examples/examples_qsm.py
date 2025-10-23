@@ -1,8 +1,7 @@
-import os
 import sys
-sys.path.append(os.path.abspath('./'))
-from qsm import *
-from utils import *
+import os
+from awe_pe.qsm import *
+from awe_pe.utils import *
 
 # Simulation of the complete pumping cycle simulation using the quasi steady model. System properties are declared as dictionary
 # The environmental state is represented by a logarithmic profile. 

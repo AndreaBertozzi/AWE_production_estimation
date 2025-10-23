@@ -8,12 +8,12 @@ et al. The model is implemented in such a way that it can be used for numerical 
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import copy
 import pandas as pd
-from utils import zip_el, plot_traces
+
+from copy import copy
+from awe_pe.utils import zip_el, plot_traces
 
 np.seterr(all='raise')
-
 
 class OperationalLimitViolation(Exception):
     """Violation of an operational limit as imposed by the wind profile specifications and system properties.
@@ -2345,15 +2345,21 @@ class Cycle(TimeSeries):
             # Start with traction
             last_time_tran = trans.time[-1]
             self.time = [t - last_time_tran for t in trac.time]
-
+            trac.time = [t - last_time_tran for t in trac.time]
+            
+            
             # Retraction: offset by last traction time
             last_time_trac = self.time[-1]
             self.time += [t + last_time_trac for t in retr.time]
-
+            retr.time = [t + last_time_trac for t in retr.time]
+            
             # Transition: offset by last retraction time
             last_time_retr = self.time[-1]
             self.time += [t + last_time_retr for t in trans.time]
+            trans.time = [t + last_time_retr for t in trans.time]
+            
 
+            
             # Kinematics and steady_states: just concatenate in the same order
             self.kinematics = trac.kinematics + retr.kinematics + trans.kinematics
             self.steady_states = trac.steady_states + retr.steady_states + trans.steady_states

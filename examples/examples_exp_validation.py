@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath('./'))
 from exp_validation_utils import *
 from qsm import *
-from utils import *
+from awe_pe.utils import *
 
 """
 This file provides a collection of `example_*` functions that load an experimental kite-power system cycle

@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils import *
-from qsm import *
-from cycle_optimizer import OptimizerCycle
-from power_curve_constructor import PowerCurveConstructor
+from awe_pe.utils import *
+from awe_pe.qsm import *
+from awe_pe.cycle_optimizer import OptimizerCycle
+from awe_pe.power_curve_constructor import PowerCurveConstructor
 
 def export_to_csv_single_profile(v, v_cut_out, p, x_opts, n_cwp, opt_details):
     

@@ -4,10 +4,9 @@ import yaml
 import os
 import sys
 
-sys.path.append(os.path.abspath('./'))
-from cycle_optimizer import OptimizerCycle
-from qsm import LogProfile, TractionPhasePattern, SystemProperties
-from utils import *
+from awe_pe.cycle_optimizer import OptimizerCycle
+from awe_pe.qsm import LogProfile, TractionPhasePattern, SystemProperties
+from awe_pe.utils import *
 
 def example_1():          
     with open("config/config.yaml") as f:
@@ -150,10 +149,7 @@ def main():
 
     if choice in example_funcs:
         print(f"\nRunning example_{choice}()...\n")
-        try:
-            example_funcs[choice]()
-        except Exception as e:
-            print(f"An error occurred while running example_{choice}: {e}")
+        example_funcs[choice]()
     else:
         print("Invalid choice. Please enter a number between 1 and 3.")
 

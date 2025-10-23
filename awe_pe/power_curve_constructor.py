@@ -6,7 +6,7 @@ import os
 import pickle
 
 from qsm import *
-from utils import flatten_dict
+from awe_pe.utils import flatten_dict
 
 class PowerCurveConstructor:
     def __init__(self, wind_speeds):
@@ -483,7 +483,7 @@ class WindSpeedLimitsEstimator:
         ax[1].set_ylim([0, 400])
     
 if __name__ == "__main__": 
-    from utils import load_config
+    from awe_pe.utils import load_config
     sys_props_v9 = SystemProperties(load_config('config.yaml'))
     we = WindSpeedLimitsEstimator(sys_props_v9)
     we.estimate_wind_speed_operational_limits(profile_clustering=False)
