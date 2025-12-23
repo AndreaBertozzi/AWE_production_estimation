@@ -1994,7 +1994,7 @@ class TractionPhasePattern(Phase):
         self.azimuth_angle = np.deg2rad(20)               
 
         # State of kite along the cross-wind pattern.
-        self.n_crosswind_patterns = -0.21
+        self.n_crosswind_patterns = 0# -0.14 # -0.21
         self.pattern = LissajousPattern(phase_settings['pattern'])
  
     def finalize_start_and_end_kite_obj(self):
