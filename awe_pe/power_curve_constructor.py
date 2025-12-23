@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import pickle
 
-from qsm import *
+from awe_pe.qsm import *
 from awe_pe.utils import flatten_dict
 
 class PowerCurveConstructor:
