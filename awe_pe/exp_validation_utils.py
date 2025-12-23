@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from scipy import signal
-from qsm import * 
+from awe_pe.qsm import * 
 
 def load_process_protologger_file(data_path, test_name):
     """
@@ -459,11 +459,17 @@ def run_simulation_from_exp_dataframe(exp_cycle_dataframe, sys_props, wind_prof_
     env_trans.set_reference_wind_speed(np.mean(exp_RIRO_dataframe['ground_wind_velocity']))
     env_trans.set_reference_height(6)
     env_trans.set_roughness_length(0.1)
+
+    # env_avg.plot_wind_profile()
+    # env_trac.plot_wind_profile()
+    # env_retr.plot_wind_profile()
+    # env_trans.plot_wind_profile()
+    # plt.show()
    
     RO_settings = {'control': ('reeling_speed', avg_reeling_speed_RO),
                    'pattern': {'azimuth_angle': -max_az_trac, 'rel_elevation_angle': rel_el_angle}, 'time_step': timestep}
     
-    print(np.rad2deg((max_az_trac, rel_el_angle, avg_el_angle)))
+    #print(np.rad2deg((max_az_trac, rel_el_angle, avg_el_angle)))
     # Default cycle settings for speed control
     cycle_settings = {'cycle': {
                             'traction_phase': TractionPhasePattern,
@@ -590,12 +596,19 @@ def pack_results_sim(cycle, env_state):
     y_traj = list(y_traj)
     z_traj = list(z_traj)
     tether_length = [s.straight_tether_length for s in cycle.retraction_phase.kinematics]
+    elevation_angle = [kin.elevation_angle for kin in cycle.retraction_phase.kinematics]
+    azimuth_angle = [kin.azimuth_angle for kin in cycle.retraction_phase.kinematics]
+    course_angle = [kin.course_angle for kin in cycle.retraction_phase.kinematics]
+    
     flight_phase_index = 3*np.ones_like(tether_length)
     # Assuming each list is a column
-    data = [time_retr, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index]
+    data = [time_retr, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index,\
+                elevation_angle, azimuth_angle, course_angle]
     RI_sim_df = pd.DataFrame(list(zip(*data)),\
                               columns=['time', 'ground_tether_reelout_speed', 'ground_tether_force',\
-                                        'ground_tether_length', 'ground_mech_power','x_pos', 'y_pos', 'z_pos', 'flight_phase_index'])
+                                        'ground_tether_length', 'ground_mech_power','x_pos', 'y_pos', 'z_pos', 'flight_phase_index',\
+                                         'elevation_angle', 'azimuth_angle',\
+                                          'course_angle'])
 
 
     # --- Transition Phase ---
@@ -611,12 +624,19 @@ def pack_results_sim(cycle, env_state):
     y_traj = list(y_traj)
     z_traj = list(z_traj)
     tether_length = [s.straight_tether_length for s in cycle.transition_phase.kinematics]
+    elevation_angle = [kin.elevation_angle for kin in cycle.transition_phase.kinematics]
+    azimuth_angle = [kin.azimuth_angle for kin in cycle.transition_phase.kinematics]
+    course_angle = [kin.course_angle for kin in cycle.transition_phase.kinematics]
+    
     flight_phase_index = 4*np.ones_like(tether_length)
     # Assuming each list is a column
-    data = [time_RIRO, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index]
+    data = [time_RIRO, reel_speeds, tether_forces, tether_length, power_ground, x_traj, y_traj, z_traj, flight_phase_index,\
+                elevation_angle, azimuth_angle, course_angle]
     RIRO_sim_df = pd.DataFrame(list(zip(*data)),\
                                 columns=['time', 'ground_tether_reelout_speed', 'ground_tether_force',\
-                                          'ground_tether_length', 'ground_mech_power', 'x_pos', 'y_pos', 'z_pos', 'flight_phase_index'])
+                                          'ground_tether_length', 'ground_mech_power', 'x_pos', 'y_pos', 'z_pos', 'flight_phase_index',\
+                                         'elevation_angle', 'azimuth_angle',\
+                                          'course_angle'])
 
     sim_cycle_dataframe = pd.concat([RO_sim_df, RI_sim_df, RIRO_sim_df], axis=0, ignore_index=True)
     sim_cycle_dataframe.reset_index(drop=True, inplace=True)
