@@ -60,6 +60,7 @@ def generate_power_curves_single_profile(config_filename):
     opt_settings = parse_opt_settings(config)
     otp_var_enabled_idx, init_vals = parse_opt_variables(config)
     cons_enabled_idx, cons_param_vals = parse_constraints(config)
+    cons_enabled_idx = range(12)
 
     profile, roughness_length, ref_height, ref_windspeeds = parse_environment(config)
 
@@ -100,7 +101,7 @@ def generate_power_curves_single_profile(config_filename):
     wind_speeds = np.array(ref_windspeeds)
     vw_cut_in = wind_speeds[0]
     vw_cut_out = wind_speeds[-1]
-    if vw_cut_out >= 15:
+    if vw_cut_out >= 50:
         wind_speeds[-1] = vw_cut_out - 1    
         wind_speeds = np.concatenate((wind_speeds, np.linspace(vw_cut_out-1, vw_cut_out-0.01, 6)))
     
@@ -252,7 +253,7 @@ def compare_kpis(power_curves):
 
 if __name__ == "__main__":
     labels = []
-    pc = generate_power_curves_single_profile('config/config_V3_speed.yaml')
+    #pc = generate_power_curves_single_profile('config/config_V3_speed.yaml')
     pc = load_power_curve_single_profile_results_and_plot_trajectories('config/config_V3_speed.yaml', 'output/power_curve_log_profile.pickle')
     plt.show()
 
