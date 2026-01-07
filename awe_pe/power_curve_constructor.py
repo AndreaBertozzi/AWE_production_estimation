@@ -68,6 +68,7 @@ class PowerCurveConstructor:
                 x_opt, sim_successful = self.run_optimization(vw, power_optimizer, x0_next)
             except (OperationalLimitViolation, SteadyStateError, PhaseError):
                 try:  # Retry for a slightly different wind speed.
+                    print(f"Re-running optimization")
                     x_opt, sim_successful = self.run_optimization(vw+1e-2, power_optimizer, x0_next)
                     self.wind_speeds[i] = vw+1e-2
                 except (OperationalLimitViolation, SteadyStateError, PhaseError):
