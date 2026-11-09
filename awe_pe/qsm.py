@@ -153,7 +153,7 @@ class LogProfile(EnvAtmosphericPressure):
 
     def set_reference_wind_speed(self, v):
         self.wind_speed_ref = v
-    
+
     def set_roughness_length(self, h_0):
         self.h_0 = h_0
 
@@ -184,7 +184,7 @@ class LogProfile(EnvAtmosphericPressure):
         plt.plot(wind_speeds, heights)
         fig = plt.gcf()
         fig.set_figwidth(3)
-        fig.set_figheight(3.5)      
+        fig.set_figheight(3.5)
         plt.xlabel('Wind speed [m/s]')
         plt.ylabel('Height [m]')
         plt.grid(True)
@@ -404,9 +404,9 @@ class SystemProperties(SysPropsFixedAeroCoeffs):
         self.max_azimuth_min_limit = 10*np.pi/180               # [rad]
         self.max_azimuth_max_limit =  20*np.pi/180              # [rad]
         self.tether_stroke_min_limit = 50                       # [m]
-        self.tether_stroke_max_limit = 150                      # [m] 
+        self.tether_stroke_max_limit = 150                      # [m]
         self.min_tether_length_min_limit = 80                   # [m]
-        self.min_tether_length_max_limit = 200                  # [m]        
+        self.min_tether_length_max_limit = 200                  # [m]
 
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
@@ -475,14 +475,14 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
         self.pitch_powered = 5 * np.pi/180.                     # [rad]
         self.pitch_depowered = -5 * np.pi/180.                  # [rad]
 
-        # Aerodynamic coefficients of kite and tether.    
+        # Aerodynamic coefficients of kite and tether.
         #self.angles_of_attack_curve = np.linspace(0, 25, 26) * np.pi/180.
         #self.kite_lift_coefficients_curve_parameters = np.array([0.1, 2.5, 10*np.pi/180., 8*np.pi/180.])*1.15
         #self.kite_drag_coefficients_curve_parameters = np.array([0.1108, 1.3822, -1.384])/2
         self.angles_of_attack_range = np.array(float)
         self.lift_coefficient_range = np.array(float)
         self.drag_coefficient_range = np.array(float)
-        
+
         self.tether_drag_coefficient = 1.1  # [-]
 
         # Relevant operational limits.
@@ -497,10 +497,10 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
         self.max_azimuth_min_limit = 10*np.pi/180               # [rad]
         self.max_azimuth_max_limit =  20*np.pi/180              # [rad]
         self.tether_stroke_min_limit = 50                       # [m]
-        self.tether_stroke_max_limit = 150                      # [m] 
+        self.tether_stroke_max_limit = 150                      # [m]
         self.min_tether_length_min_limit = 80                   # [m]
         self.min_tether_length_max_limit = 200                  # [m]
-        
+
 
         # Procedure to set attributes using input dictionary.
         for key, val in props.items():
@@ -551,14 +551,14 @@ class SysPropsAeroCurves(SysPropsFixedAeroCoeffs):
         kite_lift_coefficient = np.interp(alpha, self.angles_of_attack_range, self.lift_coefficient_range)
         kite_drag_coefficient = np.interp(alpha, self.angles_of_attack_range, self.drag_coefficient_range)
         #kite_drag_coefficient = np.array([1, alpha, alpha**2]).dot(self.kite_drag_coefficients_curve_parameters)
-        
+
         c_l = kite_lift_coefficient
-        c_d_tether = .25*d*le/s*self.tether_drag_coefficient
+        c_d_tether = 0.25*d*le/s*self.tether_drag_coefficient
         c_d = kite_drag_coefficient + c_d_tether
 
         self.aerodynamic_force_coefficient = np.sqrt(c_l**2 + c_d**2)
         self.lift_to_drag = c_l/c_d
-        
+
     def update(self, tether_length, kite_powered=True):
         self.tether_length = tether_length
         self.calculate_tether_mass()
@@ -942,7 +942,7 @@ class SteadyState:
                     self.angle_of_attack = alpha
                     self.lift_to_drag = system_properties.lift_to_drag
                     break
-                elif self.n_iterations_aoa == 50: 
+                elif self.n_iterations_aoa == 50:
                     self.process_error("Angle of attack did not converge.", 9, print_details)
                 else:
                     # fraction_d_alpha -= .01
@@ -1026,7 +1026,6 @@ class TimeSeries:
         energy (float): Energy produced in the evaluated time interval [J].
         average_power (float): Time average of the produced power [W].
         duration (float): Length of evaluated time interval [s].
-        
     """
     def __init__(self):
         # Result lists with time and states.
@@ -1235,7 +1234,7 @@ class Phase(TimeSeries):
         reeling_tether_length (float): Tether length that is reeled out [m].
 
     """
-    def __init__(self, phase_settings, impose_operational_limits=True): 
+    def __init__(self, phase_settings, impose_operational_limits=True):
         """
         Args:
             phase_settings (tuple): Value for `control_settings` attribute.
@@ -1330,7 +1329,7 @@ class Phase(TimeSeries):
                 raise PhaseError(error_message, 1)
 
         # Processing resulting steady states to determine the phase performance.
-        self.energy = np.trapz([ss.power_ground for ss in self.steady_states], self.time)
+        self.energy = np.trapezoid([ss.power_ground for ss in self.steady_states], self.time)
         self.duration = self.timer - timer_start
         if self.duration > 0:
             self.average_power = self.energy / self.duration
@@ -1341,11 +1340,11 @@ class Phase(TimeSeries):
     def calc_operational_properties(self):
         """Calculate the operational properties of the phase."""
         # Calculate time averages.
-        self.average_reeling_factor = np.trapz([ss.reeling_factor for ss in self.steady_states],
+        self.average_reeling_factor = np.trapezoid([ss.reeling_factor for ss in self.steady_states],
                                                self.time) / self.duration
-        self.average_reeling_speed = np.trapz([ss.reeling_speed for ss in self.steady_states],
+        self.average_reeling_speed = np.trapezoid([ss.reeling_speed for ss in self.steady_states],
                                               self.time) / self.duration
-        self.average_tether_force_ground = np.trapz([ss.tether_force_ground for ss in self.steady_states],
+        self.average_tether_force_ground = np.trapezoid([ss.tether_force_ground for ss in self.steady_states],
                                                     self.time) / self.duration
 
         # Calculate the length properties of the path covered by the kite.
@@ -1901,7 +1900,7 @@ class TractionPhaseHybrid(TractionPhase):
                 'elevation_angle_ref': elev,
                 'control': self.control_settings,
                 'pattern': self.liss_pattern_settings,
-                'time_step': .5,                
+                'time_step': .5,
             }
             pattern = EvaluatePattern(pattern_settings)
             pattern.enable_limit_violation_error = False
@@ -1991,12 +1990,12 @@ class TractionPhasePattern(Phase):
         self.tether_length_start = 240.
         self.tether_length_end = 385.
         self.elevation_angle = np.deg2rad(50)
-        self.azimuth_angle = np.deg2rad(20)               
+        self.azimuth_angle = np.deg2rad(20)
 
         # State of kite along the cross-wind pattern.
-        self.n_crosswind_patterns = 0# -0.14 # -0.21
+        self.n_crosswind_patterns = -0.14 # -0.21
         self.pattern = LissajousPattern(phase_settings['pattern'])
- 
+
     def finalize_start_and_end_kite_obj(self):
         """Finalize the initial state and ending criteria before running the simulation, respectively `kinematics_start`
         and `position_end`. Furthermore, calculating `delta_path_angle`."""
@@ -2069,7 +2068,7 @@ class EvaluatePattern(Phase):  # Determine performance along cross wind pattern 
         # Representative traction state of kite along the cross-wind pattern.
         self.tether_length = settings['tether_length']
         self.elevation_angle_ref = settings['elevation_angle_ref']
-        
+
         # Result lists with time and states.
         self.kinematics = None
         self.steady_states = None
@@ -2165,9 +2164,9 @@ class EvaluatePattern(Phase):  # Determine performance along cross wind pattern 
                     flying_down += t - t_last
                 t_last = t
             print("Flying down [%]:", flying_down/pattern_duration*100.)
-            print("Representative azimuth angle [deg]:", np.arccos(np.trapz(cos_phi, self.time)/pattern_duration)*180./np.pi)
-            print("Representative elevation angle [deg]:", np.arccos(np.trapz(cos_theta, self.time)/pattern_duration)*180./np.pi)
-            print("Representative course angle [deg]:", np.arccos(np.trapz(cos_chi, self.time)/pattern_duration)*180./np.pi)
+            print("Representative azimuth angle [deg]:", np.arccos(np.trapezoid(cos_phi, self.time)/pattern_duration)*180./np.pi)
+            print("Representative elevation angle [deg]:", np.arccos(np.trapezoid(cos_theta, self.time)/pattern_duration)*180./np.pi)
+            print("Representative course angle [deg]:", np.arccos(np.trapezoid(cos_chi, self.time)/pattern_duration)*180./np.pi)
 
         return pattern_duration
 
@@ -2352,20 +2351,17 @@ class Cycle(TimeSeries):
             last_time_tran = trans.time[-1]
             self.time = [t - last_time_tran for t in trac.time]
             trac.time = [t - last_time_tran for t in trac.time]
-            
-            
+
             # Retraction: offset by last traction time
             last_time_trac = self.time[-1]
             self.time += [t + last_time_trac for t in retr.time]
             retr.time = [t + last_time_trac for t in retr.time]
-            
+
             # Transition: offset by last retraction time
             last_time_retr = self.time[-1]
             self.time += [t + last_time_retr for t in trans.time]
             trans.time = [t + last_time_retr for t in trans.time]
-            
 
-            
             # Kinematics and steady_states: just concatenate in the same order
             self.kinematics = trac.kinematics + retr.kinematics + trans.kinematics
             self.steady_states = trac.steady_states + retr.steady_states + trans.steady_states

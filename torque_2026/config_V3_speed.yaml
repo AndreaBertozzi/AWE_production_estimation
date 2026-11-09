@@ -1,4 +1,4 @@
-# CONFIGURATION FILE FOR cycle_optimizer.py - power_curves.py 
+# CONFIGURATION FILE FOR cycle_optimizer.py - power_curves.py
 # Reported values correspond to the current state of kitepower system June 2025
 
 # Kite mass, area, and aerodynamic properties
@@ -7,29 +7,11 @@ kite:
   projected_area: 19.75         # m2
   drag_coefficient:
     powered: 0.175
-    depowered: 0.145 #67587475026779
+    depowered: 0.145
   lift_coefficient:
-    powered: 0.6823802656058869
-    depowered: 0.44806543118525693
-    
+    powered: 0.682
+    depowered: 0.448
 
-# Powered state:
-# 0.6823802656058869
-# 0.1377398042029228
-# 0.2022398042029228
-# Depowered state:
-# 0.44806543118525693
-# 0.10758747502677903
-# 0.172087475026779
-
-# Mean CL powered: 0.64
-# Mean CD powered: 0.12
-# Mean CL/CD powered: 5.13
-# Std CL powered: 0.07
-# Std CD powered: 0.03
-# Mean CL depowered: 0.41
-# Mean CD depowered: 0.11
-    
 # Tether properties
 tether:
   length: 307                   # m
@@ -37,17 +19,18 @@ tether:
   density: 970    # kg/m3
   drag_coefficient: 1.1         # -
 
-# Environment 
+# Environment
 environment:
   profile: logarithmic
   roughness_length: 0.1
   ref_height: 100
-  ref_windspeeds: [7.5, 7.75,
-                    8.0, 8.25, 8.5, 8.75, 9.0, 9.25, 9.5, 9.75,
-                    10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75,
-                    12.0, 12.25, 12.5, 12.75, 13.0, 13.25, 13.5, 13.75,
-                    14.0, 14.25, 14.5, 14.75, 15.0, 15.25, 15.5, 15.75,
-                    16.0]
+  ref_windspeeds: [8.5, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0]
+
+  # [8.5, 8.75, 9.0, 9.25, 9.5, 9.75,
+  #                   10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5, 11.75,
+  #                   12.0, 12.25, 12.5, 12.75, 13.0, 13.25, 13.5, 13.75,
+  #                   14.0, 14.25, 14.5, 14.75, 15.0, 15.25, 15.5, 15.75,
+  #                   16.0]
 
 sim_settings:
   force_or_speed_control: 'hybrid'
@@ -65,10 +48,10 @@ bounds:
     max: 40.                    # deg
   relative_elevation: # Maximum elevation relative to the average elevation (max flight cone height)
     min: 5.                      # deg
-    max: 10.                     # deg 
-  force_limits: # Minimum force to have control on the kite 
+    max: 10.                     # deg
+  force_limits: # Minimum force to have control on the kite
     min: 90                    # kgf
-    max: 9000                  # kgf
+    max: 900                  # kgf
   speed_limits: # Should be both positive, so the full range is [-max, -min] U [min, max]
     min: 0.0                    # m/s
     max: 9.8                    # m/s
@@ -81,7 +64,7 @@ bounds:
 
 constraints:
   # Default constraints
-  force_out_setpoint_min: 
+  force_out_setpoint_min:
     enabled: true
   force_in_setpoint_max:
     enabled: true
@@ -96,7 +79,7 @@ constraints:
   ineq_cons_cw_patterns:
     enabled: true
     min_patterns: 1 # Minimum number of crosswind patterns [-]
-  ineq_cons_max_elevation:  
+  ineq_cons_max_elevation:
     enabled: true
     max_elevation: 100 # Maximum elevation angle [deg]
   ineq_cons_max_course_rate:
@@ -105,34 +88,32 @@ constraints:
   ineq_cons_min_height:
     enabled: true
     min_height: 20
- 
+
 opt_variables:
   v_RO:
     enabled: true
     init_value: 1.33
   F_RI:
    enabled: true
-   init_value: 882.540000 # N  
-  
+   init_value: 882.540000 # N
   average_elevation:
     enabled: true
     init_value: 35.46 # deg
   relative_elevation:
     enabled: true
     init_value: 4.2847 # deg
-  maximum_azimuth:    
+  maximum_azimuth:
     enabled: true
     init_value: 18.86455662 # deg
   minimum_tether_length:
-    enabled: false
+    enabled: true
     init_value: 201.516 # m
   tether_stroke:
-    enabled: false 
+    enabled: true
     init_value: 103.9 # m
 
 opt_settings:
   maxiter: 30
-  iprint: 2 
+  iprint: 2
   ftol: 1e-6
   eps: 1e-6
-

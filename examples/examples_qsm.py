@@ -1,11 +1,12 @@
 import sys
 import os
+sys.path.append(os.path.abspath('./'))
 from awe_pe.qsm import *
 from awe_pe.utils import *
 
 # Simulation of the complete pumping cycle simulation using the quasi steady model. System properties are declared as dictionary
-# The environmental state is represented by a logarithmic profile. 
-# The traction phase of the cycle is simplified to a straight line (with fixed elevation, azimuth, and course angles) 
+# The environmental state is represented by a logarithmic profile.
+# The traction phase of the cycle is simplified to a straight line (with fixed elevation, azimuth, and course angles)
 # representative of the crosswind fligth of the kite
 def example_1():
     # Create environment object.
@@ -29,7 +30,7 @@ def example_1():
     sys_props = SystemProperties(sys_props)
     # In addition to system properties, operational settings should be introduced. This is how we fly the kite. In this example, we are using a simplified
     # description of the traction phase (TractionPhase), and we include transition energy in the final power calculations.
-    # We set the max and min tether lenght, the average elevation during traction. 
+    # We set the max and min tether lenght, the average elevation during traction.
     # During retraction, we aim for a constant tether tension of tether_force_ground, during transition we aim for 0. reeling speed (fly down on the sphere of radius
     # tether_length_end_retraction), during traction we aim for a certain reeling factor (defined as v_reeling_out/v_wind). All the "control modes" are interchangable
     # within phases. For reel-out, the representative state is completed by a course angle and an azimuth angle, in addition to the elevation_angle_traction set in
@@ -38,8 +39,8 @@ def example_1():
             'cycle': {
                 'traction_phase':                   TractionPhase,
                 'include_transition_energy':        True,
-                'tether_length_start_retraction':   385.,      
-                'tether_length_end_retraction':     240.,  
+                'tether_length_start_retraction':   385.,
+                'tether_length_end_retraction':     240.,
                 'elevation_angle_traction':         25.0*np.pi/180
             },
             'retraction': {
@@ -59,8 +60,8 @@ def example_1():
 
     # Create pumping cycle simulation object, run simulation, and plot results.
     cycle = Cycle(settings)
-    cycle.follow_wind = True 
-    # Specifies whether kite is 'aligned' with the wind. Controlled azimuth angle is 
+    cycle.follow_wind = True
+    # Specifies whether kite is 'aligned' with the wind. Controlled azimuth angle is
     # expressed w.r.t. wind reference frame if True, or ground reference frame if False.
 
     # TODO: Investigate the use of this function to check productivity with wind misalignment
@@ -73,7 +74,7 @@ def example_1():
 
     # Plotting other quantitities, and scaling the angles to have them in degrees
     cycle.time_plot(('straight_tether_length', 'elevation_angle', 'azimuth_angle', 'course_angle'),
-                        ('Tether lenght [m]', 'Elevation [deg]', 'Azimuth [deg]', 'Course [deg]'),
+                        ('$Tether lenght [m]$', 'Elevation [deg]', 'Azimuth [deg]', 'Course [deg]'),
                         (None, 180./np.pi, 180./np.pi, 180./np.pi))
 
     # Plotting the trajectory
@@ -82,32 +83,32 @@ def example_1():
     plt.show()
 
 # Simulation of the complete pumping cycle simulation using the quasi steady model. System properties are loaded from the config.yaml file.
-# The environmental state is represented by a logarithmic profile. 
+# The environmental state is represented by a logarithmic profile.
 # The traction phase of the cycle is represented by a lemniscate (figure of eight trajectory)
 def example_2():
     # Create environment object.
     env_state = LogProfile()
     # Set reference height and wind speed
     env_state.set_reference_height(100)
-    env_state.set_reference_wind_speed(8.0)
+    env_state.set_reference_wind_speed(10.0)
 
     # Load system properties from config.yaml
-    with open("config/config.yaml") as f:
+    with open("config/config_V3_speed.yaml") as f:
         config = yaml.safe_load(f)
 
     sys_props = parse_system_properties_and_bounds(config)
     sys_props = SystemProperties(sys_props)
 
-    # In terms of operational settings, in this example, we are using a simplified representation of an actual figure eight pattern based on 
+    # In terms of operational settings, in this example, we are using a simplified representation of an actual figure eight pattern based on
     # Lissajous pattern (TractionPhasePattern). Such pattern is governed by a dictionary passed to the traction settings, with relative elevation
-    # and max azimuth angle. 
+    # and max azimuth angle.
 
     settings = {
             'cycle': {
                 'traction_phase':                   TractionPhasePattern,
                 'include_transition_energy':        True,
-                'tether_length_start_retraction':   350.,      
-                'tether_length_end_retraction':     250.,  
+                'tether_length_start_retraction':   350.,
+                'tether_length_end_retraction':     250.,
                 'elevation_angle_traction':         30*np.pi/180
             },
             'retraction': {
@@ -122,7 +123,7 @@ def example_2():
                 'time_step': .05,
             },
         }
-    
+
     # Create pumping cycle simulation object, run simulation, and plot results.
     cycle = Cycle(settings)
     cycle.run_simulation(sys_props, env_state, print_summary=True)
