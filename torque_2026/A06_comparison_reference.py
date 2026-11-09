@@ -14,7 +14,7 @@ plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif"
 })
-        
+
 with open("config/config_V3_speed.yaml") as f:
     config = yaml.safe_load(f)
 
@@ -51,10 +51,7 @@ oc = OptimizerCycle(cycle_sim_settings, sys_props, env_state, reduce_x = opt_var
                         reduce_ineq_cons=range(12), parametric_cons_values=cons_param_vals,
                           force_or_speed_control='hybrid')
 
-x_opt = [1.36214107e+00, 8.82540000e+02, 6.10865238e-01, 7.39951045e-02,
- 4.12125197e-01, 9.00000000e+01, 2.17000000e+02]
-
-x_opt2 = [1.34898359e+00, 1.00021200e+03, 6.10865238e-01, 7.49756265e-02,
+x_opt = [1.34898359e+00, 1.00021200e+03, 6.10865238e-01, 7.49756265e-02,
  4.20550891e-01, 9.00000000e+01, 2.17000000e+02]
 
 
@@ -184,7 +181,7 @@ for ii, x_pos in enumerate(x):
         y_pos = np.min([baseline_values[ii], opt_values[ii]])
         ax1.text(x_pos- width-0.15, y_pos-1.5, rf"$\Delta \approx {gains[ii]*100:+.0f}\%$", fontsize=18)
 
-    
+
 
 xlb, xub = ax1.get_xlim()
 ax1.hlines(0, xlb, xub, colors=['black'], linewidth = 1.5)
